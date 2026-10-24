@@ -6,7 +6,7 @@
 
 ![PulseGrid](docs/screenshot-main.png)
 
-[![CI](https://github.com/your-name/pulsegrid/actions/workflows/ci.yml/badge.svg)](../../actions/workflows/ci.yml)
+[![CI](https://github.com/AIcoder123-a/pulsegrid/actions/workflows/ci.yml/badge.svg)](../../actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-22d3ee.svg)](LICENSE)
 [![No dependencies](https://img.shields.io/badge/dependencies-0-f43f5e.svg)]()
 [![No build step](https://img.shields.io/badge/build-none-a3e635.svg)]()
@@ -37,7 +37,7 @@
 ## 🚀 Quick start
 
 ```bash
-git clone https://github.com/your-name/pulsegrid.git
+git clone https://github.com/AIcoder123-a/pulsegrid.git
 cd pulsegrid
 python -m http.server 8000     # or: npx serve
 # open http://localhost:8000
