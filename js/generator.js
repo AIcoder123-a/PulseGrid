@@ -1,0 +1,182 @@
+/* PulseGrid — generator.js
+ *
+ * Rule-based beat generator: each style encodes the musical conventions of a
+ * genre (where kicks may land, backbeats, hat grids, bass vocabulary), and the
+ * RNG rolls inside those rules — so every "🎲" is random but still grooves.
+ * Seeded via mulberry32, so a seed fully reproduces a beat.
+ */
+
+'use strict';
+
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+const ch = (rng, p) => rng() < p;
+const pick = (rng, arr) => arr[Math.floor(rng() * arr.length)];
+const clamp01 = (p) => Math.max(0, Math.min(1, p));
+
+// minor pentatonic degrees over one octave
+const SCALE = [0, 3, 5, 7, 10];
+
+function noteNear(rng, root, spread) {
+  const deg = Math.floor(rng() * (spread + 1));
+  const oct = ch(rng, 0.18) ? 12 : 0;
+  return Math.max(BASS_MIDI_LO, Math.min(BASS_MIDI_HI, root + SCALE[deg] + oct));
+}
+
+function emptyLanes() {
+  const p = emptyPattern();
+  return p;
+}
+
+/* ---------- style rules ---------- */
+
+function genHouse(rng, dg) {
+  const p = emptyLanes();
+  [0, 4, 8, 12].forEach((s) => (p.tracks.kick[s] = 1));
+  if (ch(rng, 0.95)) { p.tracks.clap[4] = 2; p.tracks.clap[12] = 2; }
+  for (const s of [2, 6, 10, 14]) {
+    if (ch(rng, clamp01(0.9 * dg))) p.tracks.chat[s] = ch(rng, 0.35) ? 2 : 1;
+  }
+  if (ch(rng, 0.7)) p.tracks.ohat[pick(rng, [6, 14])] = 1;
+  for (let s = 0; s < 16; s++) if (ch(rng, clamp01(0.8 * dg))) p.tracks.shaker[s] = 1;
+  for (const s of [2, 6, 10, 14]) {
+    if (ch(rng, 0.85)) p.tracks.bass[s] = { midi: noteNear(rng, 36, 2), accent: s % 8 === 2 };
+  }
+  return { pattern: p, bpm: 120 + Math.round(rng() * 10), swing: +(0.05 + rng() * 0.06).toFixed(2) };
+}
+
+function genHiphop(rng, dg) {
+  const p = emptyLanes();
+  const kickSlots = pick(rng, [[0, 6, 10], [0, 7, 10], [0, 3, 6, 10], [0, 10]]);
+  kickSlots.forEach((s) => (p.tracks.kick[s] = 1));
+  const free = [...Array(16).keys()].filter((s) => !kickSlots.includes(s) && s !== 4 && s !== 12);
+  if (ch(rng, clamp01(0.35 * dg))) p.tracks.kick[pick(rng, free)] = 1; // ghost kick
+  p.tracks.snare[4] = 2; p.tracks.snare[12] = 2;
+  if (ch(rng, clamp01(0.35 * dg))) {
+    const g = pick(rng, [7, 9, 11, 15]);
+    p.tracks.snare[g] = 1;
+  }
+  if (ch(rng, 0.4)) { p.tracks.clap[4] = 1; p.tracks.clap[12] = 1; }
+  for (let s = 0; s < 16; s += 2) {
+    if (ch(rng, clamp01(0.85 * dg))) p.tracks.chat[s] = 1;
+  }
+  for (const s of [1, 3, 5, 7, 9, 11, 13, 15]) {
+    if (ch(rng, clamp01(0.2 * dg))) p.tracks.chat[s] = 1;
+  }
+  if (ch(rng, 0.35)) p.tracks.ohat[14] = 1;
+  for (const s of kickSlots) {
+    if (ch(rng, 0.85)) p.tracks.bass[s] = { midi: noteNear(rng, 36, 2), accent: s === 0 };
+  }
+  return { pattern: p, bpm: 84 + Math.round(rng() * 12), swing: +(0.24 + rng() * 0.1).toFixed(2) };
+}
+
+function genTechno(rng, dg) {
+  const p = emptyLanes();
+  [0, 4, 8, 12].forEach((s) => (p.tracks.kick[s] = 1));
+  if (ch(rng, clamp01(0.25 * dg))) p.tracks.kick[pick(rng, [3, 7, 11, 15])] = 1;
+  if (ch(rng, 0.5)) p.tracks.clap[12] = 1;
+  for (const s of [2, 6, 10, 14]) {
+    if (ch(rng, clamp01(0.92 * dg))) p.tracks.chat[s] = ch(rng, 0.3) ? 2 : 1;
+  }
+  for (const s of [6, 14]) if (ch(rng, 0.7)) p.tracks.ohat[s] = 1;
+  for (let s = 1; s < 16; s += 2) if (ch(rng, clamp01(0.75 * dg))) p.tracks.shaker[s] = 1;
+  if (ch(rng, 0.4)) { p.tracks.cowbell[3] = 1; if (ch(rng, 0.5)) p.tracks.cowbell[11] = 1; }
+  const root = 36;
+  for (let s = 0; s < 16; s++) {
+    p.tracks.bass[s] = { midi: s === 15 && ch(rng, 0.25) ? root + 12 : root, accent: s % 4 === 0 };
+  }
+  return { pattern: p, bpm: 128 + Math.round(rng() * 12), swing: 0 };
+}
+
+function genBreaks(rng, dg) {
+  const p = emptyLanes();
+  const kickSlots = pick(rng, [[0, 10], [0, 6, 10], [0, 3, 10], [0, 10, 13]]);
+  kickSlots.forEach((s) => (p.tracks.kick[s] = 1));
+  p.tracks.snare[4] = 2; p.tracks.snare[12] = 2;
+  if (ch(rng, 0.6)) p.tracks.snare[pick(rng, [7, 9])] = 1;
+  for (let s = 0; s < 16; s += 2) {
+    if (ch(rng, clamp01(0.8 * dg))) p.tracks.chat[s] = 1;
+  }
+  if (ch(rng, clamp01(0.3 * dg))) p.tracks.chat[pick(rng, [3, 7, 11, 15])] = 1;
+  if (ch(rng, 0.45)) p.tracks.ohat[14] = 1;
+  if (ch(rng, 0.35)) p.tracks.tom[15] = 1;
+  for (let s = 0; s < 16; s += 2) {
+    if (ch(rng, clamp01(0.55 * dg))) {
+      p.tracks.bass[s] = { midi: noteNear(rng, 36, 3), accent: s === 0 };
+    }
+  }
+  return { pattern: p, bpm: 108 + Math.round(rng() * 12), swing: +(0.06 + rng() * 0.06).toFixed(2) };
+}
+
+function genSurprise(rng, dg) {
+  const styles = [genHouse, genHiphop, genTechno, genBreaks];
+  const base = pick(rng, styles)(rng, dg);
+  const p = base.pattern;
+  // cross-pollinate: sprinkle elements from the other styles
+  if (ch(rng, 0.5)) p.tracks.tom[pick(rng, [10, 13, 15])] = 1;
+  if (ch(rng, 0.4)) p.tracks.cowbell[pick(rng, [2, 6, 10, 14])] = 1;
+  if (ch(rng, 0.3)) p.tracks.shaker = p.tracks.shaker.map((v) => (v ? v : (ch(rng, 0.2 * dg) ? 1 : 0)));
+  return { pattern: p, bpm: 76 + Math.round(rng() * 68), swing: +(rng() * 0.34).toFixed(2) };
+}
+
+const GEN_STYLES = [
+  { id: 'house',    name: 'House',    fn: genHouse },
+  { id: 'hiphop',   name: 'Hip-Hop',  fn: genHiphop },
+  { id: 'techno',   name: 'Techno',   fn: genTechno },
+  { id: 'breaks',   name: 'Breaks',   fn: genBreaks },
+  { id: 'surprise', name: 'Surprise', fn: genSurprise },
+];
+
+/* ---------- mutation ---------- */
+
+/** Evolve a pattern: small musical nudges — never destroys the downbeat kick. */
+function mutatePattern(src, rng, amount = 1) {
+  const p = clonePattern(src);
+
+  for (const t of TRACKS) {
+    const lane = p.tracks[t.id];
+    for (let s = 0; s < 16; s++) {
+      const strong = s % 4 === 0;
+      if (t.id === 'kick' && s === 0) continue;                 // keep the one
+      if (lane[s] && ch(rng, 0.12 * amount)) lane[s] = 0;       // drop
+      else if (!lane[s] && ch(rng, (strong ? 0.1 : 0.04) * amount)) lane[s] = 1; // add
+      else if (lane[s] === 2 && ch(rng, 0.15)) lane[s] = 1;     // soften accent
+      else if (lane[s] === 1 && strong && ch(rng, 0.1)) lane[s] = 2; // harden
+    }
+  }
+
+  for (let s = 0; s < 16; s++) {
+    const n = p.tracks.bass[s];
+    if (!n) {
+      if (ch(rng, 0.05 * amount)) p.tracks.bass[s] = { midi: noteNear(rng, 36, 3), accent: false };
+      continue;
+    }
+    if (ch(rng, 0.25)) n.midi = noteNear(rng, 36, 3);
+    if (ch(rng, 0.15)) n.accent = !n.accent;
+    if (ch(rng, 0.06 * amount)) p.tracks.bass[s] = null;
+  }
+  return p;
+}
+
+const Generator = {
+  styles: GEN_STYLES,
+  /** density: 0..1 (scales event probabilities). seed optional for reproducible beats. */
+  generate(styleId, density, seed) {
+    const style = GEN_STYLES.find((s) => s.id === styleId) || GEN_STYLES[0];
+    const rng = mulberry32(seed == null ? (Math.random() * 0x7fffffff) | 0 : seed);
+    const dg = 0.4 + density * 1.2;
+    return style.fn(rng, dg);
+  },
+  mutate(pattern, seed, amount = 1) {
+    const rng = mulberry32(seed == null ? (Math.random() * 0x7fffffff) | 0 : seed);
+    return mutatePattern(pattern, rng, amount);
+  },
+};

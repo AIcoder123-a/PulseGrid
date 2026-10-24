@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PulseGrid — browser drum machine</title>
+  <meta name="description" content="A zero-dependency browser drum machine & bass-line sequencer. Every sound synthesized in real time with the Web Audio API — no samples, no build step.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0e14'/%3E%3Ccircle cx='10' cy='16' r='3.4' fill='%2322d3ee'/%3E%3Ccircle cx='18' cy='16' r='3.4' fill='%23818cf8'/%3E%3Ccircle cx='25' cy='16' r='3.4' fill='%23f43f5e'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="brand">
+      <svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true">
+        <circle cx="8" cy="16" r="3.6" fill="#22d3ee"/>
+        <circle cx="16" cy="16" r="3.6" fill="#818cf8"/>
+        <circle cx="24" cy="16" r="3.6" fill="#f43f5e"/>
+      </svg>
+      <span class="brand-name">PulseGrid</span>
+      <span class="brand-tag">web audio drum machine</span>
+    </div>
+
+    <div class="transport">
+      <button id="btnPlay" class="btn-play">▶<span>Play</span></button>
+      <button id="btnStop" class="btn-stop" title="Stop">■</button>
+    </div>
+
+    <div class="ctrl">
+      <label for="bpm">BPM</label>
+      <input type="number" id="bpm" min="60" max="200" step="1" value="124">
+      <button id="btnTap" class="mini" title="Tap tempo">TAP</button>
+    </div>
+
+    <div class="ctrl">
+      <label for="swing">Swing</label>
+      <input type="range" id="swing" min="0" max="100" value="13">
+      <output id="swingVal">13%</output>
+    </div>
+
+    <div class="ctrl">
+      <label for="masterVol">Master</label>
+      <input type="range" id="masterVol" min="0" max="100" value="85">
+    </div>
+
+    <div class="ctrl">
+      <label for="presetSel">Preset</label>
+      <select id="presetSel">
+        <option value="" selected>— load —</option>
+      </select>
+    </div>
+
+    <div class="ctrl patterns" id="patternBtns"></div>
+
+    <div class="ctrl actions">
+      <button id="btnCopy" class="mini" title="Copy active pattern to the next slot">Copy→</button>
+      <button id="btnClear" class="mini">Clear</button>
+      <button id="btnWav" class="mini" title="Render patterns to a .wav file (offline, faster than real time)">WAV</button>
+      <button id="btnMidi" class="mini" title="Export a standard MIDI file (drums on ch10, bass on ch1)">MIDI</button>
+      <button id="btnShare" class="mini" title="Copy a link that encodes this whole project state">Share</button>
+      <button id="btnExport" class="mini">Export</button>
+      <button id="btnImport" class="mini">Import</button>
+      <input type="file" id="fileImport" accept="application/json" hidden>
+    </div>
+  </header>
+
+  <div class="vizwrap">
+    <canvas id="viz"></canvas>
+  </div>
+
+  <main>
+    <section class="panel gen">
+      <h2>Beat Generator <span class="hint">— one click, a fresh groove (A = main · B = variation)</span></h2>
+      <div class="gen-row">
+        <select id="genStyle" title="Generator style"></select>
+        <label>Density <input type="range" id="genDensity" min="0" max="100" value="55"></label>
+        <button id="btnGenerate" class="btn-gen">🎲 Generate</button>
+        <button id="btnMutate" class="mini">🧬 Mutate</button>
+      </div>
+    </section>
+
+    <section class="panel song">
+      <h2>Arrangement <span class="hint">— song mode chains patterns bar by bar · click a slot to cycle A→B→C→D→remove</span></h2>
+      <div class="song-row">
+        <button id="btnSongMode" class="mini">Song: OFF</button>
+        <button id="btnSongAdd" class="mini" title="Append a bar playing the active pattern">+ Bar</button>
+        <button id="btnSongClear" class="mini">Reset</button>
+        <div id="songChain" class="song-chain"></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Drums <span class="hint">— drag to paint · double-click = accent · right-click = clear accent</span></h2>
+      <div id="tracks"></div>
+    </section>
+
+    <section class="panel sound">
+      <h2>Sound Design <span class="hint">— per-drum tune & decay · applies to live playback, WAV and share links</span></h2>
+      <div class="sound-row">
+        <div id="soundChips" class="sound-chips"></div>
+        <div class="sound-ctrl">
+          <label>Tune <output id="sndTuneVal">×1.00</output></label>
+          <input type="range" id="sndTune" min="50" max="200" value="100">
+        </div>
+        <div class="sound-ctrl">
+          <label>Decay <output id="sndDecayVal">×1.00</output></label>
+          <input type="range" id="sndDecay" min="40" max="250" value="100">
+        </div>
+        <button id="sndPreview" class="mini">► Hear</button>
+        <button id="sndReset" class="mini">Reset</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Bass Synth <span class="hint">— click: note → accent → off · one note per step</span></h2>
+      <div id="roll"></div>
+    </section>
+
+    <section class="panel fx">
+      <h2>Master FX <span class="hint">— delay is tempo-synced (dotted 8th)</span></h2>
+      <div class="fx-rack">
+        <div class="fx-unit">
+          <label>Delay <output id="delayVal">20%</output></label>
+          <input type="range" id="fxDelay" min="0" max="100" value="20">
+        </div>
+        <div class="fx-unit">
+          <label>Reverb <output id="reverbVal">16%</output></label>
+          <input type="range" id="fxReverb" min="0" max="100" value="16">
+        </div>
+        <div class="fx-unit">
+          <label>Filter <output id="filterVal">16.0 kHz</output></label>
+          <input type="range" id="fxFilter" min="0" max="100" value="98">
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <span><kbd>Space</kbd> play / stop</span>
+    <span><kbd>1</kbd>–<kbd>4</kbd> switch pattern</span>
+    <span>Patterns switch live while playing</span>
+    <span><a href="https://github.com/" target="_blank" rel="noopener">PulseGrid</a> · pure Web Audio · no samples · MIT</span>
+  </footer>
+
+  <div id="toast" role="status"></div>
+
+  <script src="js/audio-engine.js"></script>
+  <script src="js/presets.js"></script>
+  <script src="js/sequencer.js"></script>
+  <script src="js/visualizer.js"></script>
+  <script src="js/render.js"></script>
+  <script src="js/midi.js"></script>
+  <script src="js/generator.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
