@@ -7,6 +7,9 @@
   <meta name="description" content="A zero-dependency browser drum machine & bass-line sequencer. Every sound synthesized in real time with the Web Audio API — no samples, no build step.">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0e14'/%3E%3Ccircle cx='10' cy='16' r='3.4' fill='%2322d3ee'/%3E%3Ccircle cx='18' cy='16' r='3.4' fill='%23818cf8'/%3E%3Ccircle cx='25' cy='16' r='3.4' fill='%23f43f5e'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="css/style.css">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#0a0c10">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
 </head>
 <body>
 
@@ -153,5 +156,12 @@
   <script src="js/generator.js"></script>
   <script src="js/ui.js"></script>
   <script src="js/app.js"></script>
+  <script>
+    // PWA: install as an app + full offline (skipped on file://, where the app is local anyway)
+    if ('serviceWorker' in navigator &&
+        (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
+      navigator.serviceWorker.register('./sw.js').catch(() => {});
+    }
+  </script>
 </body>
 </html>
