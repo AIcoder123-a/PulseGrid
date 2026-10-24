@@ -6,6 +6,7 @@
 
 ![PulseGrid](docs/screenshot-main.png)
 
+[![CI](https://github.com/your-name/pulsegrid/actions/workflows/ci.yml/badge.svg)](../../actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-22d3ee.svg)](LICENSE)
 [![No dependencies](https://img.shields.io/badge/dependencies-0-f43f5e.svg)]()
 [![No build step](https://img.shields.io/badge/build-none-a3e635.svg)]()
@@ -98,6 +99,7 @@ pulsegrid/
 │   ├── render.js         # offline WAV rendering + PCM encoder
 │   ├── ui.js             # grid, roll, song strip, generator, share links, persistence
 │   └── app.js            # bootstrap + window.PG debug hook
+├── test/run.js           # zero-dependency unit tests (vm harness, no framework)
 └── docs/screenshot-main.png
 ```
 
@@ -112,12 +114,21 @@ Open the console on a running instance and poke at it: `PG.seq.stop()`, `PG.stat
 - [x] Per-step drum accents
 - [x] Per-voice sound design (tune / decay)
 - [x] MIDI file export
+- [x] Zero-dependency test suite + CI (Node 18/20/22)
 - [ ] PWA install
-- [ ] Automated tests for the sequencer state machine
+- [ ] Browser E2E in CI
 
 ## 🤝 Contributing
 
 Issues and PRs welcome. The codebase is deliberately small and dependency-free — please keep it that way. New presets are the easiest contribution: just add an entry to `PRESETS` in `js/presets.js`.
+
+Run the test suite before opening a PR (no install step, no framework):
+
+```bash
+npm test        # or: node test/run.js
+```
+
+The suite covers the pure data layer — pattern DSL, generator rules, share codec, state normalization, MIDI/WAV byte formats. Audio-clock scheduling is verified by browser E2E.
 
 ## 📄 License
 

@@ -480,11 +480,13 @@ const UI = {
       fx: [+st.fx.delay.toFixed(2), +st.fx.reverb.toFixed(2), Math.round(st.fx.filter)],
       ap: st.active,
       sc: st.song ? st.song.chain.slice(0, 16) : [0, 1],
-      ts: (function () {   // non-default sound design params only
+      ts: (function () {   // non-default mix & sound design per track (drums + bass)
         const o = {};
-        for (const t of TRACKS) {
-          const ts = st.trackState[t.id];
-          if (ts && (ts.tune !== 1 || ts.decay !== 1)) o[t.id] = [+ts.tune.toFixed(2), +ts.decay.toFixed(2)];
+        for (const id of Object.keys(st.trackState)) {
+          const ts = st.trackState[id];
+          if (ts && (ts.tune !== 1 || ts.decay !== 1 || ts.vol !== 0.8)) {
+            o[id] = [+ts.tune.toFixed(2), +ts.decay.toFixed(2), +ts.vol.toFixed(2)];
+          }
         }
         return Object.keys(o).length ? o : undefined;
       })(),
@@ -513,11 +515,13 @@ const UI = {
     };
     if (!st.song.chain.length) st.song.chain = [0, 1];
     if (d.ts && typeof d.ts === 'object') {
+      const num = (x, dflt) => (typeof x === 'number' && Number.isFinite(x) ? x : dflt);
       for (const id of Object.keys(d.ts)) {
-        const [tune, decay] = d.ts[id];
-        if (st.trackState[id]) {
-          st.trackState[id].tune = +tune || 1;
-          st.trackState[id].decay = +decay || 1;
+        const v = d.ts[id];
+        if (st.trackState[id] && Array.isArray(v)) {
+          st.trackState[id].tune = num(v[0], 1);
+          st.trackState[id].decay = num(v[1], 1);
+          st.trackState[id].vol = Math.min(1, Math.max(0, num(v[2], 0.8)));  // 2-element legacy links keep default vol
         }
       }
     }
