@@ -774,7 +774,8 @@ const UI = {
       PG.viz.playing = false;
       this.refreshSong();
       $('btnPlay').classList.remove('playing');
-      $('btnPlay').innerHTML = '▶<span>Play</span>';
+      $('btnPlay').innerHTML = '▶<span>' + t('play') + '</span>';
+      this.updateTitle();
     });
 
     $('bpm').addEventListener('input', () => {
@@ -782,6 +783,7 @@ const UI = {
       if (!Number.isFinite(v)) return;
       PG.state.bpm = Math.min(200, Math.max(60, v));
       PG.engine.setBpm(PG.state.bpm);
+      this.updateTitle();
       PG.markDirty();
     });
 
@@ -857,6 +859,10 @@ const UI = {
     });
   },
 
+  updateTitle() {
+    document.title = (PG.seq.isPlaying ? '▶ ' : '') + PG.state.bpm + ' BPM — PulseGrid';
+  },
+
   togglePlay() {
     const seq = PG.seq;
     const btn = $('btnPlay');
@@ -868,6 +874,7 @@ const UI = {
       btn.innerHTML = '▶<span>' + t('play') + '</span>';
     } else {
       PG.engine.ensure();
+      this.updateTitle();
       this.applyEngineParams();
       seq.start();
       PG.viz.playing = true;
@@ -875,6 +882,7 @@ const UI = {
       btn.classList.add('playing');
       btn.innerHTML = '❚❚<span>' + t('stop') + '</span>';
     }
+    this.updateTitle();
   },
 
   /* ================= FX ================= */
@@ -1056,7 +1064,11 @@ const UI = {
       btn.disabled = true;
       btn.textContent = '…';
       try {
-        const r = await RenderWav.render(PG.state, { sampleRate: +$('wavRate').value || 44100 });
+        const scope = $('wavScope').value;
+        const r = await RenderWav.render(PG.state, {
+          sampleRate: +$('wavRate').value || 44100,
+          only: scope === 'all' ? undefined : +scope,
+        });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(r.blob);
         a.download = `pulsegrid-${PG.state.bpm}bpm.wav`;

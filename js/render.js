@@ -11,9 +11,13 @@ function hasContent(p) {
   return TRACKS.some((t) => p.tracks[t.id].some(Boolean)) || p.tracks.bass.some(Boolean);
 }
 
-/** Shared export sequencing: the song chain when song mode is on (one loop
- *  per bar), otherwise every non-empty pattern. Used by WAV and MIDI export. */
-function exportSequence(state, patternLoops = 2) {
+/** Shared export sequencing: `only` (a pattern index) renders just that
+ *  pattern ×2; otherwise the song chain when song mode is on (one loop per
+ *  bar), else every non-empty pattern. Used by WAV and MIDI export. */
+function exportSequence(state, patternLoops = 2, only) {
+  if (only != null && state.patterns[only]) {
+    return { pats: [state.patterns[only]], loops: 2 };
+  }
   const song = state.song;
   if (song && song.enabled && song.chain.length) {
     const reps = song.reps || [];
@@ -66,7 +70,7 @@ const RenderWav = {
     const loops = opts.loops ?? 2;
     const sr = opts.sampleRate ?? 44100;
 
-    const { pats, loops: barsLoops } = exportSequence(state, loops);
+    const { pats, loops: barsLoops } = exportSequence(state, loops, opts.only);
     if (!pats.length) throw new Error('nothing to render');
 
     const len = state.steps || 16;   // steps per pattern
