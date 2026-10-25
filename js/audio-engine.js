@@ -95,6 +95,13 @@ class AudioEngine {
     this.trigger(id, this.ctx.currentTime + 0.02);
   }
 
+  /** One-shot audition of a bass note while editing the roll. */
+  previewBass(midi, accent) {
+    this.ensure();
+    if (this.ctx.state === 'suspended') this.ctx.resume();
+    this.bassNote(this.ctx.currentTime + 0.02, midi, accent, 0.22);
+  }
+
   /** Create the live context and the whole graph. Must be called from a user gesture. */
   ensure() {
     if (this.ctx) {

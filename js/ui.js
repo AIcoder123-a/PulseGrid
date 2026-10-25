@@ -185,6 +185,8 @@ const UI = {
           this.painting = true;
           this.paintVal = !PG.state.patterns[PG.state.active].tracks[cfg.id][s];
           this.setDrumCell(cfg.id, s, this.paintVal);
+          // audition the voice while editing with the transport stopped
+          if (!PG.seq.isPlaying) PG.engine.preview(cfg.id);
         });
         cell.addEventListener('pointerenter', () => {
           if (this.painting) this.setDrumCell(cfg.id, s, this.paintVal);
@@ -745,8 +747,10 @@ const UI = {
     }
     if (!cur || cur.midi !== midi) {
       lane[step] = { midi, accent: false };
+      if (!PG.seq.isPlaying) PG.engine.previewBass(midi, false);
     } else if (!cur.accent) {
       cur.accent = true;
+      if (!PG.seq.isPlaying) PG.engine.previewBass(midi, true);
     } else {
       lane[step] = null;
     }

@@ -29,15 +29,7 @@ const MidiExport = {
   /** Exports the song chain (song mode) or every non-empty pattern ×2 —
    *  the same sequencing rule as WAV export. */
   export(state) {
-    const song = state.song;
-    let pats, loops;
-    if (song && song.enabled && song.chain.length) {
-      pats = song.chain.map((i) => state.patterns[i]);
-      loops = 1;
-    } else {
-      pats = state.patterns.filter(hasContent);
-      loops = 2;
-    }
+    const { pats, loops } = exportSequence(state);
     if (!pats.length) throw new Error('nothing to export');
 
     const events = [];   // { tick, order, bytes }

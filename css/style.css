@@ -223,6 +223,9 @@ h2 .hint { font-weight: 400; text-transform: none; letter-spacing: 0.2px; opacit
 .step.beat-1 { border-color: #26304433; }
 .step:hover { background: #1b243499; }
 .step.on {
+  /* fallbacks first: browsers without color-mix() keep a solid lit cell */
+  background: var(--c);
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.18), inset 0 -6px 10px rgba(0, 0, 0, 0.25);
   background: linear-gradient(180deg, color-mix(in srgb, var(--c) 88%, white 12%), var(--c));
   border-color: transparent;
   box-shadow: 0 0 12px color-mix(in srgb, var(--c) 55%, transparent), inset 0 -6px 10px rgba(0, 0, 0, 0.25);
@@ -295,6 +298,7 @@ h2 .hint { font-weight: 400; text-transform: none; letter-spacing: 0.2px; opacit
   color: #06121a;
   background: var(--c);
   border-color: transparent;
+  box-shadow: 0 0 10px rgba(129, 140, 248, 0.35);
   box-shadow: 0 0 10px color-mix(in srgb, var(--c) 55%, transparent);
 }
 .sound-ctrl { display: flex; flex-direction: column; gap: 7px; }

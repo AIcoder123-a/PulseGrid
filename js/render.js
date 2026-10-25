@@ -11,6 +11,16 @@ function hasContent(p) {
   return TRACKS.some((t) => p.tracks[t.id].some(Boolean)) || p.tracks.bass.some(Boolean);
 }
 
+/** Shared export sequencing: the song chain when song mode is on (one loop
+ *  per bar), otherwise every non-empty pattern. Used by WAV and MIDI export. */
+function exportSequence(state, patternLoops = 2) {
+  const song = state.song;
+  if (song && song.enabled && song.chain.length) {
+    return { pats: song.chain.map((i) => state.patterns[i]), loops: 1 };
+  }
+  return { pats: state.patterns.filter(hasContent), loops: patternLoops };
+}
+
 /** 16-bit PCM stereo WAV encoder. */
 function encodeWav(buffer) {
   const numCh = buffer.numberOfChannels;
@@ -51,17 +61,7 @@ const RenderWav = {
     const loops = opts.loops ?? 2;
     const sr = opts.sampleRate ?? 44100;
 
-    // song mode renders the chain as arranged (one loop per bar, silence kept);
-    // pattern mode renders every non-empty pattern
-    const song = state.song;
-    let pats, barsLoops;
-    if (song && song.enabled && song.chain.length) {
-      pats = song.chain.map((i) => state.patterns[i]);
-      barsLoops = 1;
-    } else {
-      pats = state.patterns.filter(hasContent);
-      barsLoops = loops;
-    }
+    const { pats, loops: barsLoops } = exportSequence(state, loops);
     if (!pats.length) throw new Error('nothing to render');
 
     const stepDur = 60 / state.bpm / 4;
