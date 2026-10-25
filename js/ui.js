@@ -287,6 +287,49 @@ const UI = {
     PG.markDirty();
   },
 
+  _songDragMove(e) {
+    const d = this._songDrag;
+    if (!d) return;
+    if (!d.active) {
+      if (Math.abs(e.clientX - d.x0) < 8) return;
+      d.active = true;
+      d.chip.classList.add('dragging');
+    }
+    const over = document.elementFromPoint(e.clientX, e.clientY)?.closest('.song-chip');
+    document.querySelectorAll('.song-chip.drag-over').forEach((c) => c.classList.remove('drag-over'));
+    if (over && over !== d.chip) over.classList.add('drag-over');
+  },
+
+  _songDragUp(e) {
+    const d = this._songDrag;
+    if (!d) return;
+    this._songDrag = null;
+    if (!d.active) return;                        // plain click — let it through
+    d.chip.classList.remove('dragging');
+    const over = document.elementFromPoint(e.clientX, e.clientY)?.closest('.song-chip');
+    document.querySelectorAll('.song-chip.drag-over').forEach((c) => c.classList.remove('drag-over'));
+    // a same-chip release fires a click right after pointerup — suppress that
+    // one, then clear the flag so the user's next click is never swallowed
+    this._suppressChipClick = true;
+    setTimeout(() => { this._suppressChipClick = false; }, 0);
+    if (!over || over === d.chip) { this.refreshSong(); return; }
+    const from = d.slot;
+    const to = +over.dataset.slot;
+    const song = PG.state.song;
+    const [pat] = song.chain.splice(from, 1);
+    song.chain.splice(to, 0, pat);
+    const [rep] = song.reps.splice(from, 1);
+    song.reps.splice(to, 0, rep);
+    if (PG.seq.isPlaying && song.enabled) {
+      PG.seq.songIndex = song.chain.indexOf(PG.state.active);
+      if (PG.seq.songIndex < 0) PG.seq.songIndex = 0;
+    }
+    this.pushUndo();
+    this.refreshSong();
+    PG.markDirty();
+    this.toast(t('tReordered'));
+  },
+
   toggleHelp(force) {
     const el = $('help');
     const show = force != null ? force : !el.classList.contains('open');
@@ -296,6 +339,12 @@ const UI = {
   /* ================= song mode ================= */
 
   buildSong() {
+    if (!this._songDragBound) {
+      this._songDragBound = true;
+      document.addEventListener('pointermove', (e) => this._songDragMove(e));
+      document.addEventListener('pointerup', (e) => this._songDragUp(e));
+    }
+
     $('btnSongMode').addEventListener('click', () => {
       const song = PG.state.song;
       if (!song.chain.length) {
@@ -341,7 +390,13 @@ const UI = {
       chip.textContent = letters[patIdx] + (reps[slot] > 1 ? '×' + reps[slot] : '');
       chip.title = `Bar ${slot + 1}: pattern ${letters[patIdx]} — click cycles, right-click cycles repeats (×1–×4), past D removes`;
       if (PG.seq.isPlaying && song.enabled && PG.seq.songIndex === slot) chip.classList.add('playing');
+      chip.dataset.slot = slot;
+      chip.addEventListener('pointerdown', (e) => {
+        if (e.button !== 0) return;
+        this._songDrag = { slot, x0: e.clientX, active: false, chip };
+      });
       chip.addEventListener('click', () => {
+        if (this._suppressChipClick) { this._suppressChipClick = false; return; }
         this.pushUndo(true);
         song.chain[slot] = (song.chain[slot] + 1) % 5;
         if (song.chain[slot] === 4) {
@@ -1161,7 +1216,13 @@ const UI = {
   },
 
   refreshPatternButtons() {
-    this.patternBtns.forEach((b, i) => b.classList.toggle('active', i === PG.state.active));
+    this.patternBtns.forEach((b, i) => {
+      b.classList.toggle('active', i === PG.state.active);
+      const p = PG.state.patterns[i];
+      const has = !!p && (TRACKS.some((t) => p.tracks[t.id].some(Boolean)) ||
+        p.tracks.bass.some(Boolean) || (p.tracks.lead && p.tracks.lead.some(Boolean)));
+      b.classList.toggle('has', has);
+    });
   },
 
   refreshTransport() {

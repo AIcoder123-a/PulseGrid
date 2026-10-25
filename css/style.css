@@ -147,6 +147,13 @@ button.mini.active { color: #06121a; background: var(--accent); border-color: va
 button.mini.armed { color: #fff; background: var(--accent-2); border-color: var(--accent-2); }
 
 .patterns { display: flex; gap: 6px; }
+.patterns .pat { position: relative; }
+.patterns .pat.has::after {
+  content: '';
+  position: absolute; right: 3px; bottom: 3px;
+  width: 4px; height: 4px; border-radius: 50%;
+  background: var(--accent); opacity: 0.85;
+}
 .patterns .pat.active {
   color: #fff; background: linear-gradient(135deg, #6366f1, #a855f7);
   border-color: transparent;
@@ -322,6 +329,7 @@ h2 .hint { font-weight: 400; text-transform: none; letter-spacing: 0.2px; opacit
 .song-chain { display: flex; flex-wrap: wrap; gap: 6px; }
 .song-chip {
   min-width: 34px; height: 30px; padding: 0 8px;
+  touch-action: none;
   font-size: 13px; font-weight: 700;
   color: var(--text);
   background: var(--panel-2);
@@ -330,6 +338,8 @@ h2 .hint { font-weight: 400; text-transform: none; letter-spacing: 0.2px; opacit
   transition: border-color 0.1s ease;
 }
 .song-chip:hover { border-color: #35415a; }
+.song-chip.dragging { opacity: 0.45; }
+.song-chip.drag-over { outline: 2px dashed var(--accent); outline-offset: 1px; }
 .song-chip.playing {
   outline: 2px solid rgba(235, 244, 255, 0.85);
   background: linear-gradient(135deg, #6366f1, #a855f7);
