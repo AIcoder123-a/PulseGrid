@@ -62,11 +62,21 @@ const UI = {
   /* ================= build ================= */
 
   build() {
+    document.addEventListener('pointerover', (e) => {
+      const cell = e.target && e.target.closest ? e.target.closest('.step, .roll-cell') : null;
+      const sel = cell ? '[data-s="' + cell.dataset.s + '"]' : null;
+      if (sel === this._colHi) return;
+      if (this._colHi) document.querySelectorAll(this._colHi).forEach((c) => c.classList.remove('col-hi'));
+      this._colHi = sel;
+      if (sel) document.querySelectorAll(sel).forEach((c) => c.classList.add('col-hi'));
+    });
+
     this.undoStack = [];
     this.redoStack = [];
     this._lastPushAt = 0;
     this.buildGrids();
     this.buildPatternButtons();
+    this._bindLaneClearing();
     this.buildPresets();
     this.buildSong();
     this.buildGenerator();
@@ -90,7 +100,7 @@ const UI = {
       `<button class="mini mute" title="Mute lead">M</button>` +
       `<button class="mini solo" title="Solo lead">S</button>` +
       `<button class="mini chord" title="Chord mode: clicks place minor triads">♪</button>` +
-      `<span class="dot"></span><span class="lane-name" data-track="lead">${trackName('lead')}</span>` +
+      `<span class="dot"></span><span class="lane-name" data-track="lead" title="${t('tLaneClearHint')}">${trackName('lead')}</span>` +
       `<input type="range" class="lane-vol" min="0" max="100" title="Lead volume">` +
       `</div><div class="lane-grid"></div>`;
 
@@ -267,6 +277,23 @@ const UI = {
     this.applyEngineParams();
     PG.markDirty();
     this.toast(n === 32 ? t('tLen32') : t('tLen16'));
+  },
+
+  _bindLaneClearing() {
+    if (this._laneClearBound) return;
+    this._laneClearBound = true;
+    document.addEventListener('contextmenu', (e) => {
+      const name = e.target && e.target.closest ? e.target.closest('.lane-name') : null;
+      if (!name || !name.dataset.track) return;
+      e.preventDefault();
+      const id = name.dataset.track;
+      this.pushUndo();
+      const lane = PG.state.patterns[PG.state.active].tracks[id];
+      PG.state.patterns[PG.state.active].tracks[id] = lane.map((v) => (typeof v === 'object' ? null : 0));
+      this.refreshGrid();
+      PG.markDirty();
+      this.toast(t('tLaneCleared', { name: trackName(id) }));
+    });
   },
 
   /** Quantize a live pad hit into the audible step (transport running). */
@@ -517,7 +544,7 @@ const UI = {
       ctl.innerHTML =
         `<button class="mini mute" title="Mute">M</button>` +
         `<button class="mini solo" title="Solo">S</button>` +
-        `<span class="dot"></span><span class="lane-name" data-track="${cfg.id}">${trackName(cfg.id)}</span>` +
+        `<span class="dot"></span><span class="lane-name" data-track="${cfg.id}" title="${t('tLaneClearHint')}">${trackName(cfg.id)}</span>` +
         `<input type="range" class="lane-vol" min="0" max="100" title="Volume">`;
 
       const mute = ctl.querySelector('.mute');
@@ -598,7 +625,7 @@ const UI = {
       `<div class="lane-ctl">` +
       `<button class="mini mute" title="Mute bass">M</button>` +
       `<button class="mini solo" title="Solo bass">S</button>` +
-      `<span class="dot"></span><span class="lane-name" data-track="bass">${trackName('bass')}</span>` +
+      `<span class="dot"></span><span class="lane-name" data-track="bass" title="${t('tLaneClearHint')}">${trackName('bass')}</span>` +
       `<input type="range" class="lane-vol" min="0" max="100" title="Bass volume">` +
       `</div><div class="lane-grid"></div>`;
 

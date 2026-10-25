@@ -240,6 +240,8 @@ h2 .hint { font-weight: 400; text-transform: none; letter-spacing: 0.2px; opacit
 }
 .step.beat-1 { border-color: #26304433; }
 .step:hover { background: #1b243499; }
+.step.col-hi, .roll-cell.col-hi { background: #1c2635; }
+.step.on.col-hi, .roll-cell.on.col-hi { filter: brightness(1.18); }
 .step.on {
   /* fallbacks first: browsers without color-mix() keep a solid lit cell */
   background: var(--c);
