@@ -51,7 +51,7 @@ No server? No problem — open `index.html` directly from your file manager. It 
 
 1. Hit **🎲 Generate** — instant groove in A, variation in B (or pick a preset)
 2. Press **Play** (or `Space`)
-3. Toggle steps by clicking (or drag-painting); **double-click** a lit drum cell for an accent, right-click to clear it
+3. Toggle steps by clicking (or drag-painting); **double-click** a lit drum cell for an accent, right-click to clear it — with the transport stopped, every edit **auditions the sound instantly**
 4. Click bass-roll cells: once = note, twice = **accent**, three times = off
 5. Turn on **Song** mode, chain A–D into bars with **+ Bar**, and let the arrangement play
 6. Ride the **Filter** knob for builds, add **Delay/Reverb** for space; 🧬 **Mutate** nudges the current pattern somewhere new
