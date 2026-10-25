@@ -193,8 +193,28 @@ function genLofi(rng, dg) {
   };
 }
 
+function genDnb(rng, dg) {
+  const p = emptyLanes();
+  // breakbeat skeleton: sparse kick, paired backbeat with ghosts
+  const kickSlots = pick(rng, [[0, 10], [0, 6, 11], [0, 11]]);
+  kickSlots.forEach((s) => (p.tracks.kick[s] = 1));
+  p.tracks.snare[4] = 2; p.tracks.snare[12] = 2;
+  if (ch(rng, clamp01(0.7 * dg))) p.tracks.snare[pick(rng, [7, 9, 15])] = 1;
+  for (let s = 0; s < 16; s += 2) {
+    if (ch(rng, clamp01(0.7 * dg))) p.tracks.chat[s] = 1;
+  }
+  if (ch(rng, clamp01(0.35 * dg))) p.tracks.ohat[pick(rng, [3, 7, 15])] = 1;
+  if (ch(rng, 0.4)) p.tracks.tom[15] = 1;
+  // long rolling sub notes
+  for (const s of [0, 6, 10]) {
+    if (ch(rng, 0.8)) p.tracks.bass[s] = { midi: noteNear(rng, 36, 2), accent: s === 0 };
+  }
+  if (ch(rng, 0.6)) p.tracks.lead[pick(rng, [2, 8, 14])] = { notes: leadNotes(rng, 60, 0.25), accent: false };
+  return { pattern: p, bpm: 160 + Math.round(rng() * 14), swing: +(rng() * 0.05).toFixed(2), fx: { pump: 0.15, humanize: 0.12 } };
+}
+
 function genSurprise(rng, dg) {
-  const styles = [genHouse, genHiphop, genTechno, genBreaks, genTrap, genLofi];
+  const styles = [genHouse, genHiphop, genTechno, genBreaks, genTrap, genLofi, genDnb];
   const base = pick(rng, styles)(rng, dg);
   const p = base.pattern;
   // cross-pollinate: sprinkle elements from the other styles
@@ -211,6 +231,7 @@ const GEN_STYLES = [
   { id: 'breaks',   name: 'Breaks',   fn: genBreaks },
   { id: 'trap',     name: 'Trap',     fn: genTrap },
   { id: 'lofi',     name: 'Lo-fi',    fn: genLofi },
+  { id: 'dnb',      name: 'DnB',      fn: genDnb },
   { id: 'surprise', name: 'Surprise', fn: genSurprise },
 ];
 

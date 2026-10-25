@@ -14,7 +14,7 @@
 
 ## ✨ Features
 
-- **🎲 Beat Generator** — rule-based grooves in seven styles (House, Hip-Hop, Techno, Breaks, Trap, Lo-fi, Surprise) with a density control; each style sets its own swing **and FX character** (sidechain pump, humanize); 🧬 **Mutate** evolves the active pattern, **◎ Euc** drops a rotated euclidean rhythm E(k,16) on a random percussion lane
+- **🎲 Beat Generator** — rule-based grooves in eight styles (House, Hip-Hop, Techno, Breaks, Trap, Lo-fi, DnB, Surprise) with a density control; each style sets its own swing **and FX character** (sidechain pump, humanize); 🧬 **Mutate** evolves the active pattern, **◎ Euc** drops a rotated euclidean rhythm E(k,16) on a random percussion lane
 - **Song mode** — chain patterns bar-by-bar (up to 16 bars) and the transport plays the arrangement; the grid auto-follows whatever bar is playing
 - **8 synthesized drum voices** — kick, snare, clap, closed/open hi-hat, tom, cowbell, shaker — each built from oscillators and shaped noise, 808-style, with authentic **open-hat choking**; every drum cell supports **accents** (double-click) for velocity dynamics
 - **Mono bass synth** with a chromatic piano roll (C2–C3), per-step accents and an enveloped resonant low-pass (acid squelch included), plus its own mute / solo / volume strip
@@ -32,6 +32,7 @@
 - **Share links** — one click encodes the whole project state into the URL (base64url in the hash); open the link and the beat is there
 - **Autosave** to localStorage (flushed on tab hide/close), **export/import** patterns as JSON, destructive Clear guarded by a two-step confirm
 - **Bilingual UI** — English / 简体中文, one-click 🌐 toggle; the language follows your browser on first visit and is remembered
+- **Pattern rotate** — `⟲` / `⟳` (or `,` / `.`) shift the whole groove one step; instant variations, wrap-around included
 - **Undo / Redo** — full project history (`Ctrl+Z` / `Ctrl+Y`); bursts of fine edits coalesce into one step
 - **Live drum pads + REC** — the home row `A`–`K` triggers all eight voices in real time; flip **● REC** and your pad jams are quantized straight into the pattern (undo-able, accents preserved)
 - **Help overlay** — `?` lists every shortcut, `Esc` closes
@@ -154,4 +155,4 @@ The suite covers the pure data layer — pattern DSL, generator rules, share cod
 
 ## 中文说明
 
-**PulseGrid** 是一个纯 Web Audio API 实时合成的浏览器鼓机 + 贝斯/主奏音序器:零依赖、零构建、零采样,双击 `index.html` 即可运行。界面支持中英文一键切换(🌐),首次访问自动跟随浏览器语言。🎲 一键生成七种曲风的完整节拍(鼓 + 贝斯 + 旋律,A 主 groove + B 变奏),🧬 变异、◎ 欧几里得节奏、A–K 键盘打鼓、Ctrl+Z 撤销/重做、侧链泵动与人性化;鼓格支持重音、两个钢琴卷帘(贝斯 C2–C3、主奏 C4–C5 可切三和弦)带重音、四组 Pattern 可编排成最多 16 小节的 Song 自动连播;Sound Design 面板可调每个鼓的音高与衰减;一键离线渲染 WAV、导出/导入标准 MIDI(鼓 10 通道、贝斯 1、主奏 2,与任何 DAW 双向互通),或生成携带完整状态的分享链接。欢迎 Star / PR,新预设和新生成曲风都是很好的上手贡献。
+**PulseGrid** 是一个纯 Web Audio API 实时合成的浏览器鼓机 + 贝斯/主奏音序器:零依赖、零构建、零采样,双击 `index.html` 即可运行。界面支持中英文一键切换(🌐),首次访问自动跟随浏览器语言。🎲 一键生成八种曲风的完整节拍(鼓 + 贝斯 + 旋律,A 主 groove + B 变奏),⟲⟳ 一步旋转整条 groove,🧬 变异、◎ 欧几里得节奏、A–K 键盘打鼓、Ctrl+Z 撤销/重做、侧链泵动与人性化;鼓格支持重音、两个钢琴卷帘(贝斯 C2–C3、主奏 C4–C5 可切三和弦)带重音、四组 Pattern 可编排成最多 16 小节的 Song 自动连播;Sound Design 面板可调每个鼓的音高与衰减;一键离线渲染 WAV、导出/导入标准 MIDI(鼓 10 通道、贝斯 1、主奏 2,与任何 DAW 双向互通),或生成携带完整状态的分享链接。欢迎 Star / PR,新预设和新生成曲风都是很好的上手贡献。

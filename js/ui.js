@@ -9,6 +9,13 @@
 const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 const midiName = (m) => NOTE_NAMES[m % 12] + (Math.floor(m / 12) - 1);
 
+/** Rotate a lane right by `shift` steps (negative = left). Pure for tests. */
+function rotated(lane, shift) {
+  const n = lane.length;
+  const k = ((shift % n) + n) % n;
+  return k === 0 ? lane.slice() : lane.slice(n - k).concat(lane.slice(0, n - k));
+}
+
 /** Q–I row = C4..C5 white keys; Shift+Q/W/T/Y/U = the sharp to their left. */
 const LEAD_KEYS = {
   KeyQ: 60, KeyW: 62, KeyE: 64, KeyR: 65, KeyT: 67, KeyY: 69, KeyU: 71, KeyI: 72,
@@ -328,6 +335,18 @@ const UI = {
     this.refreshSong();
     PG.markDirty();
     this.toast(t('tReordered'));
+  },
+
+  /** Rotate every lane of the active pattern (whole-groove shift). */
+  rotatePattern(dir) {
+    this.pushUndo();
+    const p = PG.state.patterns[PG.state.active];
+    const n = PG.state.steps || 16;
+    const k = ((dir % n) + n) % n;
+    for (const key of Object.keys(p.tracks)) p.tracks[key] = rotated(p.tracks[key], k);
+    this.refreshGrid();
+    PG.markDirty();
+    this.toast(t('tRotated', { n: dir > 0 ? k : k ? n - k : 0 }));
   },
 
   toggleHelp(force) {
@@ -1413,6 +1432,10 @@ const UI = {
         } else {
           PG.engine.previewLead([midi], false);
         }
+      } else if (e.code === 'Comma') {
+        this.rotatePattern(-1);
+      } else if (e.code === 'Period') {
+        this.rotatePattern(1);
       } else if (e.key === '?') {
         this.toggleHelp();
       } else if (e.key === 'Escape') {
@@ -1434,6 +1457,9 @@ const UI = {
 
     $('btnUndo').addEventListener('click', () => this.undo());
     $('btnRedo').addEventListener('click', () => this.redo());
+    $('btnRotL').addEventListener('click', () => this.rotatePattern(-1));
+    $('btnRotR').addEventListener('click', () => this.rotatePattern(1));
+
     $('btnLen').addEventListener('click', () => {
       const btn = $('btnLen');
       const growing = (PG.state.steps || 16) === 16;

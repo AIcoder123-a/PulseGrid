@@ -61,7 +61,7 @@ vm.runInContext(`
   globalThis.T = {
     STEPS, TRACKS, PRESETS, P, B, defaultState, emptyPattern, clonePattern,
     makeSoftClipCurve, encodeWav, RenderWav, Generator, euclid, MidiExport, UI,
-    STRINGS, TRACK_NAMES, t, LEAD_KEYS, demoState, AudioEngine, MidiImport,
+    STRINGS, TRACK_NAMES, t, LEAD_KEYS, demoState, AudioEngine, MidiImport, rotated,
   };
 `, ctx);
 const T = ctx.T;
@@ -201,7 +201,7 @@ const run = async () => {
   });
 
   await test('generator: style bpm windows', () => {
-    const windows = { house: [120, 130], hiphop: [84, 96], techno: [128, 140], breaks: [108, 120], trap: [130, 146], lofi: [72, 84] };
+    const windows = { house: [120, 130], hiphop: [84, 96], techno: [128, 140], breaks: [108, 120], trap: [130, 146], lofi: [72, 84], dnb: [160, 174] };
     for (const [id, [lo, hi]] of Object.entries(windows)) {
       for (let seed = 1; seed <= 10; seed++) {
         const { bpm } = T.Generator.generate(id, 0.5, seed);
@@ -650,6 +650,17 @@ const run = async () => {
     try { T.MidiImport.parse(new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8])); }
     catch (e) { msg = e.message; }
     ok(/not a MIDI file/.test(msg || ''), 'throws not-a-MIDI');
+  });
+
+  await test('rotated: lane math right/left/wrap, objects move intact', () => {
+    eq(T.rotated([1, 0, 0, 0], 1), [0, 1, 0, 0], 'right by 1');
+    eq(T.rotated([1, 0, 0, 0], -1), [0, 0, 0, 1], 'left by 1 wraps');
+    eq(T.rotated([1, 2, 3, 4], 4), [1, 2, 3, 4], 'full rotation identity');
+    eq(T.rotated([1, 0, 0, 0], 5), [0, 1, 0, 0], 'shift mod length');
+    eq(T.rotated([0, 0], 7), [0, 0], 'degenerate lane');
+    const note = { notes: [60], accent: true };
+    const out = T.rotated([note, null, null, null], 2);
+    eq(out[2], note, 'the same object moves with its step');
   });
 
   await test('offline render guard: clean error without OfflineAudioContext', async () => {
