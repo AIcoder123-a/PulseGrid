@@ -61,7 +61,7 @@ vm.runInContext(`
   globalThis.T = {
     STEPS, TRACKS, PRESETS, P, B, defaultState, emptyPattern, clonePattern,
     makeSoftClipCurve, encodeWav, RenderWav, Generator, euclid, MidiExport, UI,
-    STRINGS, TRACK_NAMES, t, LEAD_KEYS, demoState,
+    STRINGS, TRACK_NAMES, t, LEAD_KEYS, demoState, AudioEngine,
   };
 `, ctx);
 const T = ctx.T;
@@ -544,6 +544,21 @@ const run = async () => {
     const again = T.UI.normalizeState(JSON.parse(JSON.stringify(st)));
     eq(again.patterns, st.patterns, 'survives a save/load cycle unchanged');
     ok(again.song.enabled && again.song.chain.length === 8, 'song survives');
+  });
+
+  await test('engine sound table: all 10 voices, clamped, persists before ctx', () => {
+    const eng = new T.AudioEngine();        // no ctx needed for the table
+    const ids = Object.keys(eng.sound);
+    eq(ids.length, 10, '10 voices in the sound table');
+    for (const id of [...T.TRACKS.map((t) => t.id), 'bass', 'lead']) {
+      ok(ids.includes(id), `${id} present`);
+      eq(eng.sound[id], { tune: 1, decay: 1 }, `${id} defaults`);
+    }
+    eng.setSound('lead', { tune: 1.4, decay: 1.8 });
+    eq(eng.sound.lead, { tune: 1.4, decay: 1.8 }, 'setSound stores');
+    eng.setSound('lead', { tune: 99, decay: 0.01 });
+    eq(eng.sound.lead, { tune: 2, decay: 0.4 }, 'clamped to ranges');
+    eng.setSound('nope', { tune: 2 });      // unknown id — must not throw
   });
 
   await test('offline render guard: clean error without OfflineAudioContext', async () => {

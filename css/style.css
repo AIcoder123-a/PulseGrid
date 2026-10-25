@@ -132,6 +132,8 @@ input[type="range"]::-moz-range-progress {
   height: 4px; border-radius: 2px; background: var(--accent);
 }
 
+button { touch-action: manipulation; }
+
 button.mini {
   padding: 5px 10px;
   font-size: 11px; font-weight: 600; letter-spacing: 0.5px;

@@ -83,6 +83,8 @@ class AudioEngine {
     // live engine, offline WAV rendering, previews and share links.
     this.sound = {};
     for (const cfg of TRACKS) this.sound[cfg.id] = { tune: 1, decay: 1 };
+    this.sound.bass = { tune: 1, decay: 1 };
+    this.sound.lead = { tune: 1, decay: 1 };
     // sidechain pump: how hard bass/lead duck under the kick (0..1)
     this.pump = 0;
     // humanize: micro timing (±8 ms) and velocity (±15%) jitter (0..1)
@@ -475,9 +477,10 @@ class AudioEngine {
   /** Mono synth bass: saw + sine sub through an enveloped low-pass (acid-ish). */
   bassNote(t, midi, accent, dur) {
     const ctx = this.ctx, out = this.tracks.bass.in;
-    const f = midiToHz(midi);
+    const sp = this.sound.bass;
+    const f = midiToHz(midi) * sp.tune;
     const vel = accent ? 1 : 0.62;
-    const len = Math.max(dur * 0.92, 0.09);
+    const len = Math.max(dur * 0.92, 0.09) * Math.max(0.3, sp.decay);
 
     const saw = ctx.createOscillator();
     saw.type = 'sawtooth';
@@ -511,8 +514,9 @@ class AudioEngine {
   leadNote(t, notes, accent, dur) {
     const ctx = this.ctx, out = this.tracks.lead.in;
     if (!Array.isArray(notes) || !notes.length) return;
+    const sp = this.sound.lead;
     const vel = accent ? 1 : 0.7;
-    const len = Math.max(0.1, dur * 0.9);
+    const len = Math.max(0.1, dur * 0.9) * Math.max(0.3, sp.decay);
     const peak = (0.32 * vel) / Math.sqrt(notes.length);   // keep chords level-matched
 
     const lfo = ctx.createOscillator();
@@ -535,7 +539,7 @@ class AudioEngine {
 
     const oscs = [];
     for (const m of notes) {
-      const f = midiToHz(m);
+      const f = midiToHz(m) * sp.tune;
       const o1 = ctx.createOscillator();
       o1.type = 'sawtooth'; o1.frequency.value = f; o1.detune.value = -7;
       const o2 = ctx.createOscillator();

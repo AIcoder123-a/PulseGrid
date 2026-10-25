@@ -1002,7 +1002,7 @@ const UI = {
   buildSoundPanel() {
     this.soundSel = 'kick';
     const host = $('soundChips');
-    for (const cfg of TRACKS) {
+    for (const cfg of [...TRACKS, { id: 'bass' }, { id: 'lead' }]) {
       const chip = document.createElement('button');
       chip.className = 'sound-chip';
       chip.dataset.id = cfg.id;

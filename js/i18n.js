@@ -29,7 +29,7 @@ const STRINGS = {
     drumsHint: '— drag to paint · double-click = accent · right-click = clear accent',
 
     soundTitle: 'Sound Design',
-    soundHint: '— per-drum tune & decay · applies to live playback, WAV and share links',
+    soundHint: '— per-track tune & decay · applies to live playback, WAV and share links',
     tune: 'Tune', decay: 'Decay', hear: '► Hear', reset: 'Reset',
 
     bassTitle: 'Bass Synth',
@@ -95,7 +95,7 @@ const STRINGS = {
     drumsHint: '— 拖拽绘制 · 双击 = 重音 · 右键 = 取消重音',
 
     soundTitle: '音色设计',
-    soundHint: '— 每个鼓的音高与衰减 · 实时播放、WAV 与分享链接全部生效',
+    soundHint: '— 每条轨道的音高与衰减 · 实时播放、WAV 与分享链接全部生效',
     tune: '音高', decay: '延音', hear: '► 试听', reset: '重置',
 
     bassTitle: '贝斯合成器',
@@ -179,5 +179,6 @@ function applyStaticI18n() {
 function setLang(lang, persist = true) {
   LANG = STRINGS[lang] ? lang : 'en';
   if (persist) { try { localStorage.setItem('pulsegrid-lang', LANG); } catch (e) {} }
+  document.documentElement.lang = LANG === 'zh' ? 'zh-CN' : 'en';
   applyStaticI18n();
 }
