@@ -739,7 +739,7 @@ const UI = {
 
     // tap tempo
     let taps = [];
-    $('btnTap').addEventListener('click', () => {
+    const tapNow = () => {
       const tapBtn = $('btnTap');
       tapBtn.classList.remove('tapped');
       void tapBtn.offsetWidth;
@@ -757,7 +757,9 @@ const UI = {
         PG.engine.setBpm(PG.state.bpm);
         PG.markDirty();
       }
-    });
+    };
+    this.tapNow = tapNow;
+    $('btnTap').addEventListener('click', tapNow);
 
     $('swing').addEventListener('input', () => {
       PG.state.swing = ($('swing').value / 100) * 0.8;
@@ -1006,7 +1008,7 @@ const UI = {
       btn.disabled = true;
       btn.textContent = '…';
       try {
-        const r = await RenderWav.render(PG.state);
+        const r = await RenderWav.render(PG.state, { sampleRate: +$('wavRate').value || 44100 });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(r.blob);
         a.download = `pulsegrid-${PG.state.bpm}bpm.wav`;
@@ -1424,6 +1426,8 @@ const UI = {
         } else {
           PG.engine.preview(id);
         }
+      } else if (e.code === 'KeyP' && !e.repeat) {
+        this.tapNow();
       } else if (LEAD_KEYS[e.code] && !e.repeat) {
         let midi = LEAD_KEYS[e.code];
         if (e.shiftKey && { KeyQ: 1, KeyW: 1, KeyR: 1, KeyT: 1, KeyY: 1 }[e.code]) midi += 1;

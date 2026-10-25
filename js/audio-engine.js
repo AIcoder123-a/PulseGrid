@@ -230,6 +230,10 @@ class AudioEngine {
 
   /* ---- live parameter control ---- */
 
+  /** True once attach() has built the graph; live setters are no-ops
+   *  before that (the first Play re-applies everything anyway). */
+  get ready() { return !!this.ctx; }
+
   setTrackGain(id, gain) {
     const t = this.tracks[id];
     if (!t) return;
@@ -241,17 +245,20 @@ class AudioEngine {
   }
 
   setMasterVolume(v) {
+    if (!this.ready) return;
     this.masterGain.gain.setTargetAtTime(v, this.ctx.currentTime, 0.02);
   }
 
   setMasterFilterHz(hz) {
+    if (!this.ready) return;
     this.masterFilter.frequency.setTargetAtTime(hz, this.ctx.currentTime, 0.02);
   }
 
-  setDelayMix(v)    { this.delayBus.gain.setTargetAtTime(v, this.ctx.currentTime, 0.03); }
-  setReverbMix(v)   { this.reverbBus.gain.setTargetAtTime(v, this.ctx.currentTime, 0.03); }
+  setDelayMix(v)    { if (!this.ready) return; this.delayBus.gain.setTargetAtTime(v, this.ctx.currentTime, 0.03); }
+  setReverbMix(v)   { if (!this.ready) return; this.reverbBus.gain.setTargetAtTime(v, this.ctx.currentTime, 0.03); }
   setBpm(bpm) {
     // dotted-8th sync
+    if (!this.ready) return;
     this.delayNode.delayTime.setTargetAtTime((60 / bpm) * 0.75, this.ctx.currentTime, 0.08);
   }
 

@@ -213,8 +213,43 @@ function genDnb(rng, dg) {
   return { pattern: p, bpm: 160 + Math.round(rng() * 14), swing: +(rng() * 0.05).toFixed(2), fx: { pump: 0.15, humanize: 0.12 } };
 }
 
+function genReggaeton(rng, dg) {
+  const p = emptyLanes();
+  // the dembow: four-floor kick + syncopated snare "boom-ch-boom-chick"
+  [0, 4, 8, 12].forEach((s) => (p.tracks.kick[s] = 1));
+  for (const s of [3, 6, 11, 14]) p.tracks.snare[s] = ch(rng, 0.85) ? 2 : 1;
+  for (let s = 0; s < 16; s += 2) {
+    if (ch(rng, clamp01(0.5 * dg))) p.tracks.chat[s] = 1;
+  }
+  if (ch(rng, 0.5)) p.tracks.ohat[14] = 1;
+  for (const s of [0, 4, 8, 12]) {
+    if (ch(rng, 0.9)) p.tracks.bass[s] = { midi: noteNear(rng, 36, 2), accent: s === 0 };
+  }
+  if (ch(rng, 0.55)) p.tracks.lead[pick(rng, [6, 7, 14])] = { notes: leadNotes(rng, 60, 0.3), accent: false };
+  return { pattern: p, bpm: 90 + Math.round(rng() * 10), swing: +(rng() * 0.06).toFixed(2), fx: { pump: 0.35, humanize: 0.18 } };
+}
+
+function genAfrobeat(rng, dg) {
+  const p = emptyLanes();
+  // syncopated log-drum bass carries the groove
+  const kickSlots = pick(rng, [[0, 6, 10], [0, 7, 10], [0, 4, 10]]);
+  kickSlots.forEach((s) => (p.tracks.kick[s] = 1));
+  for (const s of [0, 3, 6, 8, 11, 14]) {
+    if (ch(rng, clamp01(0.75 * dg))) p.tracks.bass[s] = { midi: noteNear(rng, 36, 3), accent: s === 0 };
+  }
+  for (let s = 0; s < 16; s++) {
+    if (ch(rng, clamp01(0.6 * dg))) p.tracks.shaker[s] = 1;
+  }
+  p.tracks.clap[8] = 1;
+  for (const s of [2, 5, 9, 13]) {
+    if (ch(rng, clamp01(0.5 * dg))) p.tracks.chat[s] = 1;
+  }
+  if (ch(rng, 0.6)) p.tracks.lead[pick(rng, [4, 8, 12])] = { notes: leadNotes(rng, 60, 0.35), accent: false };
+  return { pattern: p, bpm: 104 + Math.round(rng() * 10), swing: +(0.1 + rng() * 0.08).toFixed(2), fx: { pump: 0.4, humanize: 0.22 } };
+}
+
 function genSurprise(rng, dg) {
-  const styles = [genHouse, genHiphop, genTechno, genBreaks, genTrap, genLofi, genDnb];
+  const styles = [genHouse, genHiphop, genTechno, genBreaks, genTrap, genLofi, genDnb, genReggaeton, genAfrobeat];
   const base = pick(rng, styles)(rng, dg);
   const p = base.pattern;
   // cross-pollinate: sprinkle elements from the other styles
@@ -232,6 +267,8 @@ const GEN_STYLES = [
   { id: 'trap',     name: 'Trap',     fn: genTrap },
   { id: 'lofi',     name: 'Lo-fi',    fn: genLofi },
   { id: 'dnb',      name: 'DnB',      fn: genDnb },
+  { id: 'reggaeton', name: 'Reggaeton', fn: genReggaeton },
+  { id: 'afro',     name: 'Afrobeat', fn: genAfrobeat },
   { id: 'surprise', name: 'Surprise', fn: genSurprise },
 ];
 

@@ -201,7 +201,7 @@ const run = async () => {
   });
 
   await test('generator: style bpm windows', () => {
-    const windows = { house: [120, 130], hiphop: [84, 96], techno: [128, 140], breaks: [108, 120], trap: [130, 146], lofi: [72, 84], dnb: [160, 174] };
+    const windows = { house: [120, 130], hiphop: [84, 96], techno: [128, 140], breaks: [108, 120], trap: [130, 146], lofi: [72, 84], dnb: [160, 174], reggaeton: [90, 100], afro: [104, 114] };
     for (const [id, [lo, hi]] of Object.entries(windows)) {
       for (let seed = 1; seed <= 10; seed++) {
         const { bpm } = T.Generator.generate(id, 0.5, seed);
@@ -559,6 +559,13 @@ const run = async () => {
     eng.setSound('lead', { tune: 99, decay: 0.01 });
     eq(eng.sound.lead, { tune: 2, decay: 0.4 }, 'clamped to ranges');
     eng.setSound('nope', { tune: 2 });      // unknown id — must not throw
+    // live setters are pre-ctx safe: TAP/BPM/master sliders work before Play
+    let threw = null;
+    try {
+      eng.setBpm(140); eng.setMasterVolume(0.5); eng.setMasterFilterHz(8000);
+      eng.setDelayMix(0.2); eng.setReverbMix(0.2); eng.setTrackGain('kick', 1);
+    } catch (e) { threw = e.message; }
+    eq(threw, null, 'no setter crashes before attach()');
   });
 
   await test('midi import: roundtrip of our own export', async () => {

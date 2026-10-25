@@ -68,6 +68,10 @@
       <button id="btnRedo" class="mini" title="Redo (Ctrl+Y)">↷</button>
       <button id="btnCopy" class="mini" title="Copy active pattern to the next slot" data-i18n="copy">Copy→</button>
       <button id="btnClear" class="mini" data-i18n="clear">Clear</button>
+      <select id="wavRate" class="mini rate-sel" title="WAV sample rate">
+        <option value="44100">44.1k</option>
+        <option value="48000">48k</option>
+      </select>
       <button id="btnWav" class="mini" title="Render patterns to a .wav file (offline, faster than real time)">WAV</button>
       <button id="btnMidi" class="mini" title="Export a standard MIDI file (drums ch10, bass ch1, lead ch2)">MIDI</button>
       <button id="btnShare" class="mini" title="Copy a link that encodes this whole project state" data-i18n="share">Share</button>
@@ -190,6 +194,7 @@
         <tr><td><kbd>A</kbd>–<kbd>K</kbd></td><td data-i18n="footPads">drum pads</td></tr>
         <tr><td><kbd>Q</kbd>–<kbd>I</kbd></td><td data-i18n="footLead">lead keys (Shift = sharp)</td></tr>
         <tr><td><kbd>,</kbd> / <kbd>.</kbd></td><td data-i18n="footRotate">rotate pattern</td></tr>
+        <tr><td><kbd>P</kbd></td><td data-i18n="footTap">tap tempo</td></tr>
         <tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Y</kbd></td><td data-i18n="footUndo">undo / redo</td></tr>
         <tr><td><kbd>?</kbd></td><td data-i18n="helpToggle">this help</td></tr>
         <tr><td><kbd>Esc</kbd></td><td data-i18n="helpEsc">close</td></tr>
