@@ -14,7 +14,7 @@
 
 ## ✨ Features
 
-- **🎲 Beat Generator** — rule-based grooves in six styles (House, Hip-Hop, Techno, Breaks, Trap, Surprise) with a density control; one click fills A with a main groove and B with a mutation of it, 🧬 **Mutate** evolves the active pattern in place
+- **🎲 Beat Generator** — rule-based grooves in seven styles (House, Hip-Hop, Techno, Breaks, Trap, Lo-fi, Surprise) with a density control; each style sets its own swing **and FX character** (sidechain pump, humanize); 🧬 **Mutate** evolves the active pattern, **◎ Euc** drops a rotated euclidean rhythm E(k,16) on a random percussion lane
 - **Song mode** — chain patterns bar-by-bar (up to 16 bars) and the transport plays the arrangement; the grid auto-follows whatever bar is playing
 - **8 synthesized drum voices** — kick, snare, clap, closed/open hi-hat, tom, cowbell, shaker — each built from oscillators and shaped noise, 808-style, with authentic **open-hat choking**; every drum cell supports **accents** (double-click) for velocity dynamics
 - **Mono bass synth** with a chromatic piano roll (C2–C3), per-step accents and an enveloped resonant low-pass (acid squelch included), plus its own mute / solo / volume strip
@@ -22,7 +22,7 @@
 - **Sample-accurate sequencing** via the lookahead scheduler pattern — timing never drifts, even when the main thread stutters, and playback keeps running steadily in **background tabs** (lookahead widens automatically when the tab is hidden)
 - **Swing** from straight to lazy, applied at scheduling time
 - **4 pattern banks (A–D)** switchable live while the transport runs — by mouse or keys `1`–`4`
-- **Master FX rack**: tempo-synced dotted-8th delay, convolution reverb (impulse response generated in code), master low-pass filter
+- **Master FX rack**: tempo-synced dotted-8th delay, convolution reverb (impulse response generated in code), master low-pass filter, **sidechain pump** (bass & lead duck under the kick), **humanize** (micro timing / velocity jitter)
 - **Per-track mute / solo / volume** with de-zippered gain ramps
 - **Genre presets**: House, Hip-Hop, Techno, Synthwave — each with a main groove and a variation
 - **Real-time spectrum + waveform visualizer** on canvas
@@ -55,7 +55,7 @@ No server? No problem — open `index.html` directly from your file manager. It 
 3. Toggle steps by clicking (or drag-painting); **double-click** a lit drum cell for an accent, right-click to clear it — with the transport stopped, every edit **auditions the sound instantly**
 4. Click bass-roll cells: once = note, twice = **accent**, three times = off — same for the **lead** roll (C4–C5)
 5. Turn on **Song** mode, chain A–D into bars with **+ Bar**, and let the arrangement play
-6. Ride the **Filter** knob for builds, add **Delay/Reverb** for space; 🧬 **Mutate** nudges the current pattern somewhere new
+6. Ride the **Filter** knob for builds, add **Delay/Reverb** for space; **Pump** makes it breathe, **Humanize** loosens the grid; 🧬 **Mutate** nudges the current pattern somewhere new, **◎ Euc** drops a polyrhythm
 7. Shape the kit itself in **Sound Design** — detune the kick, stretch the snare decay
 8. Done? Hit **WAV** or **MIDI** to take the beat with you, or **Share** to copy a link that carries the whole project
 
