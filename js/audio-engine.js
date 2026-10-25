@@ -98,6 +98,21 @@ class AudioEngine {
     s.decay = Math.min(2.5, Math.max(0.4, params.decay ?? s.decay));
   }
 
+  /** Metronome blip: short sine tick, accent = downbeat. Direct to the
+   *  master gain (post-filter, pre-softclip) so it never muddies the mix. */
+  click(t, accent) {
+    const ctx = this.ctx, out = this.masterGain;
+    const o = ctx.createOscillator();
+    o.type = 'sine';
+    o.frequency.value = accent ? 1568 : 1046;   // G6 / C6
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(accent ? 0.5 : 0.35, t + 0.002);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+    o.connect(g); g.connect(out);
+    o.start(t); o.stop(t + 0.06);
+  }
+
   /** One-shot audition of a voice (user gesture context). */
   preview(id) {
     this.ensure();

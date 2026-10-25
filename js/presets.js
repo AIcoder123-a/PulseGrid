@@ -317,6 +317,7 @@ function defaultState() {
   return {
     version: 1,
     steps: 16,
+    click: false,
     bpm: preset.bpm,
     swing: preset.swing,
     masterVol: 0.85,

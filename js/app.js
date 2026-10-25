@@ -61,6 +61,7 @@ window.PG = {};
     UI.build();
     UI.refreshAll();
     if (PG.state.rec) document.getElementById('btnRec').classList.add('active');
+    if (PG.state.click) document.getElementById('btnClick').classList.add('active');
     PG.markDirty();
     // song mode auto-follow: keep the grid showing the pattern that is playing
     seq.onSongAdvance = () => {

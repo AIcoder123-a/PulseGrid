@@ -330,8 +330,8 @@ const UI = {
       d.chip.classList.add('dragging');
     }
     const over = document.elementFromPoint(e.clientX, e.clientY)?.closest('.song-chip');
-    document.querySelectorAll('.song-chip.drag-over').forEach((c) => c.classList.remove('drag-over'));
-    if (over && over !== d.chip) over.classList.add('drag-over');
+    document.querySelectorAll('.song-chip.insert-before').forEach((c) => c.classList.remove('insert-before'));
+    if (over && over !== d.chip) over.classList.add('insert-before');
   },
 
   _songDragUp(e) {
@@ -341,7 +341,7 @@ const UI = {
     if (!d.active) return;                        // plain click — let it through
     d.chip.classList.remove('dragging');
     const over = document.elementFromPoint(e.clientX, e.clientY)?.closest('.song-chip');
-    document.querySelectorAll('.song-chip.drag-over').forEach((c) => c.classList.remove('drag-over'));
+    document.querySelectorAll('.song-chip.insert-before').forEach((c) => c.classList.remove('insert-before'));
     // a same-chip release fires a click right after pointerup — suppress that
     // one, then clear the flag so the user's next click is never swallowed
     this._suppressChipClick = true;
@@ -1234,6 +1234,7 @@ const UI = {
     if (!data.fx || typeof data.fx.pump !== 'number') st.fx.pump = 0;
     if (!data.fx || typeof data.fx.humanize !== 'number') st.fx.humanize = 0;
     st.steps = st.steps === 32 ? 32 : 16;
+    st.click = !!st.click;
     st.trackState = st.trackState || {};
     for (const id of Object.keys(trackTemplate)) {
       const ts = st.trackState[id] || (st.trackState[id] = { ...trackTemplate[id] });
@@ -1505,6 +1506,13 @@ const UI = {
       } else if (e.key === 'Escape') {
         this.toggleHelp(false);
       }
+    });
+
+    $('btnClick').addEventListener('click', () => {
+      PG.state.click = !PG.state.click;
+      $('btnClick').classList.toggle('active', PG.state.click);
+      PG.markDirty();
+      this.toast(PG.state.click ? t('tClickOn') : t('tClickOff'));
     });
 
     $('btnRec').addEventListener('click', () => {

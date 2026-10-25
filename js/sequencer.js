@@ -78,6 +78,7 @@ class Sequencer {
       if (this.step === 0 && this._barsStarted++ > 0) this._advanceSong();
 
       this.engine.scheduleStep(this.state.patterns[this.state.active], this.step, t, stepDur);
+      if (this.state.click) this.engine.click(t, this.step % 4 === 0);
       // playhead events are only for display; keep the queue bounded so a
       // long-hidden tab (paused rAF) doesn't accumulate thousands of entries
       this.drawQueue.push({ step: this.step, time: t });
