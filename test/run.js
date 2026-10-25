@@ -99,8 +99,12 @@ const validBass = (lane) =>
   Array.isArray(lane) && lane.length === 16 &&
   lane.every((n) => n === null || (n && typeof n === 'object' &&
     n.midi >= 36 && n.midi <= 48 && typeof n.accent === 'boolean'));
+const validLead = (lane) =>
+  Array.isArray(lane) && lane.length === 16 &&
+  lane.every((n) => n === null || (n && typeof n === 'object' &&
+    n.midi >= 60 && n.midi <= 72 && typeof n.accent === 'boolean'));
 const validPattern = (p) =>
-  TRACKS.every((t) => validLane(p.tracks[t.id])) && validBass(p.tracks.bass);
+  TRACKS.every((t) => validLane(p.tracks[t.id])) && validBass(p.tracks.bass) && validLead(p.tracks.lead);
 
 const find3 = (b, x, y, z) => {
   for (let i = 0; i < b.length - 2; i++) {
@@ -123,11 +127,11 @@ const run = async () => {
     ok(validBass(ep.tracks.bass), 'empty bass is nulls');
   });
 
-  await test('defaultState: 4 patterns, 9 track strips, song chain, House loaded', () => {
+  await test('defaultState: 4 patterns, 10 track strips, song chain, House loaded', () => {
     const st = T.defaultState();
     eq(st.patterns.length, 4);
     eq(st.song.chain, [0, 1]);
-    eq(Object.keys(st.trackState).length, 9);
+    eq(Object.keys(st.trackState).length, 10);
     ok(st.patterns.every(validPattern), 'all patterns structurally valid');
     eq(st.bpm, 124);
     eq(st.patterns[0].tracks.kick, [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0]);
@@ -194,12 +198,13 @@ const run = async () => {
     const p = T.emptyPattern();
     p.tracks.kick[0] = 2;                                   // accented kick
     p.tracks.bass[0] = { midi: 36, accent: false };         // C2
+    p.tracks.lead[0] = { midi: 67, accent: true };          // G4, accented
     const st = T.defaultState();
     st.patterns = [p, T.emptyPattern(), T.emptyPattern(), T.emptyPattern()];
     st.song = { enabled: false, chain: [0, 1] };
     st.bpm = 120;
     const r = T.MidiExport.export(st);
-    eq({ bars: r.bars, notes: r.notes }, { bars: 2, notes: 4 }, '1 pattern x 2 loops');
+    eq({ bars: r.bars, notes: r.notes }, { bars: 2, notes: 6 }, '1 pattern x 2 loops, 3 notes each');
 
     const b = new Uint8Array(await r.blob.arrayBuffer());
     eq(str(b, 0, 4), 'MThd');
@@ -215,6 +220,7 @@ const run = async () => {
 
     ok(find3(b, 0x99, 36, 110) >= 0, 'accented kick: note-on ch10, key 36, vel 110');
     ok(find3(b, 0x90, 36, 90) >= 0, 'bass note: note-on ch1, key 36, vel 90');
+    ok(find3(b, 0x91, 67, 112) >= 0, 'lead note: note-on ch2, key 67, vel 112');
     ok(find3(b, 0xff, 0x2f, 0x00) >= 0, 'end-of-track present');
   });
 
@@ -235,6 +241,7 @@ const run = async () => {
     st.swing = 0.31;
     st.patterns[0].tracks.kick[0] = 2;
     st.patterns[0].tracks.bass[3] = { midi: 43, accent: true };
+    st.patterns[0].tracks.lead[5] = { midi: 67, accent: true };
     st.song.chain = [0, 1, 3, 0];
     st.trackState.snare.tune = 1.5;
     st.trackState.snare.decay = 2;
@@ -281,7 +288,7 @@ const run = async () => {
     eq(st.patterns[0].tracks.kick[0], 1, 'true coerces to 1');
     eq(st.patterns[0].tracks.kick[1], 0, 'false coerces to 0');
     ok(st.patterns[0].tracks.snare.length === 16, 'short lanes padded');
-    eq(Object.keys(st.trackState).length, 9, 'all nine strips backfilled');
+    eq(Object.keys(st.trackState).length, 10, 'all ten strips backfilled');
     eq(st.trackState.kick.vol, 0.5, 'sparse volume kept');
     eq(st.trackState.snare.tune, 1, 'sound defaults backfilled');
     eq(st.song.chain, [0, 1], 'song backfilled');

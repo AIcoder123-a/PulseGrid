@@ -14,6 +14,7 @@ function emptyPattern() {
   const tracks = {};
   for (const t of TRACKS) tracks[t.id] = new Array(STEPS).fill(0);  // 0 = off, 1 = hit, 2 = accent
   tracks.bass = new Array(STEPS).fill(null);   // null | { midi, accent }
+  tracks.lead = new Array(STEPS).fill(null);   // null | { midi, accent }
   return { tracks };
 }
 
@@ -28,6 +29,9 @@ function B(entries) {
   for (const [s, midi, accent] of entries) a[s] = { midi, accent: !!accent };
   return a;
 }
+
+/** Same as B() for lead lanes (kept separate for readability). */
+const L = B;
 
 /** Rolling 16th bass used by techno: accent every downbeat. */
 function rollingBass(midi) {
@@ -73,6 +77,7 @@ const PRESETS = [
           cowbell: P('................'),
           shaker:  P('..x...x...x...x.'),
           bass:    B([[2, 41, 0], [6, 41, 0], [10, 43, 1], [14, 41, 0]]),
+          lead:    L([[6, 63, 0], [14, 65, 0]]),
         },
       },
     ],
@@ -106,6 +111,7 @@ const PRESETS = [
           cowbell: P('................'),
           shaker:  P('................'),
           bass:    B([[0, 36, 1], [6, 41, 0], [10, 39, 0], [12, 36, 0]]),
+          lead:    L([[0, 67, 0], [10, 65, 0]]),
         },
       },
     ],
@@ -126,6 +132,7 @@ const PRESETS = [
           cowbell: P('................'),
           shaker:  P('.x.x.x.x.x.x.x.x'),
           bass:    rollingBass(36),
+          lead:    L([[3, 63, 0], [7, 63, 0], [11, 63, 1], [15, 63, 0]]),
         },
       },
       { // B — rumble variation
@@ -162,6 +169,8 @@ const PRESETS = [
             [0, 36, 1], [2, 48, 0], [4, 36, 0], [6, 48, 0],
             [8, 36, 1], [10, 48, 0], [12, 36, 0], [14, 48, 0],
           ]),
+          lead:    L([[0, 60, 0], [2, 63, 0], [4, 67, 0], [6, 70, 0],
+                      [8, 60, 0], [10, 63, 0], [12, 67, 0], [14, 72, 1]]),
         },
       },
       { // B — sparser break
@@ -193,9 +202,19 @@ function clonePattern(p) {
   return { tracks };
 }
 
+// presets may omit lanes they don't use — backfill anything missing
+for (const preset of PRESETS) {
+  for (const p of preset.patterns) {
+    const ep = emptyPattern();
+    for (const k of Object.keys(ep.tracks)) {
+      if (p.tracks[k] == null) p.tracks[k] = ep.tracks[k];
+    }
+  }
+}
+
 function defaultState() {
   const trackState = {};
-  for (const t of [...TRACKS, { id: 'bass' }]) {
+  for (const t of [...TRACKS, { id: 'bass' }, { id: 'lead' }]) {
     trackState[t.id] = { vol: 0.8, mute: false, solo: false, tune: 1, decay: 1 };
   }
   const preset = PRESETS[0];

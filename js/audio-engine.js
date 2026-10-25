@@ -33,6 +33,10 @@ const TRACKS = [
 const BASS_MIDI_LO = 36;
 const BASS_MIDI_HI = 48;
 
+/* Lead piano-roll range: C4 (60) … C5 (72), chromatic. */
+const LEAD_MIDI_LO = 60;
+const LEAD_MIDI_HI = 72;
+
 const midiToHz = (midi) => 440 * Math.pow(2, (midi - 69) / 12);
 
 /* ---------- helpers ---------- */
@@ -100,6 +104,13 @@ class AudioEngine {
     this.ensure();
     if (this.ctx.state === 'suspended') this.ctx.resume();
     this.bassNote(this.ctx.currentTime + 0.02, midi, accent, 0.22);
+  }
+
+  /** One-shot audition of a lead note while editing the roll. */
+  previewLead(midi, accent) {
+    this.ensure();
+    if (this.ctx.state === 'suspended') this.ctx.resume();
+    this.leadNote(this.ctx.currentTime + 0.02, midi, accent, 0.24);
   }
 
   /** Create the live context and the whole graph. Must be called from a user gesture. */
@@ -184,6 +195,7 @@ class AudioEngine {
     // ---- per-track strips ----
     for (const cfg of TRACKS) this._makeTrack(cfg);
     this._makeTrack({ id: 'bass', name: 'Bass', color: '#e879f9', gain: 0.95, delay: 0.12, reverb: 0.08 });
+    this._makeTrack({ id: 'lead', name: 'Lead', color: '#fbbf24', gain: 0.55, delay: 0.35, reverb: 0.28 });
   }
 
   _makeTrack(cfg) {
@@ -241,6 +253,8 @@ class AudioEngine {
     }
     const note = pattern.tracks.bass[step];
     if (note) this.bassNote(t, note.midi, note.accent, stepDur);
+    const lead = pattern.tracks.lead[step];
+    if (lead) this.leadNote(t, lead.midi, lead.accent, stepDur);
   }
 
   trigger(id, t, vel = 1) {
@@ -468,6 +482,48 @@ class AudioEngine {
     flt.connect(g); g.connect(out);
     saw.start(t); saw.stop(t + len + 0.05);
     sub.start(t); sub.stop(t + len + 0.05);
+  }
+
+  /** Mono lead: two detuned saws with vibrato through an enveloped low-pass. */
+  leadNote(t, midi, accent, dur) {
+    const ctx = this.ctx, out = this.tracks.lead.in;
+    const f = midiToHz(midi);
+    const vel = accent ? 1 : 0.7;
+    const len = Math.max(0.1, dur * 0.9);
+
+    const o1 = ctx.createOscillator();
+    o1.type = 'sawtooth'; o1.frequency.value = f; o1.detune.value = -7;
+    const o2 = ctx.createOscillator();
+    o2.type = 'sawtooth'; o2.frequency.value = f; o2.detune.value = 7;
+
+    // gentle vibrato
+    const lfo = ctx.createOscillator();
+    lfo.frequency.value = 5.5;
+    const lfoGain = ctx.createGain();
+    lfoGain.gain.value = 5;   // cents
+    lfo.connect(lfoGain);
+    lfoGain.connect(o1.detune);
+    lfoGain.connect(o2.detune);
+
+    const flt = ctx.createBiquadFilter();
+    flt.type = 'lowpass';
+    flt.Q.value = 2;
+    flt.frequency.setValueAtTime(accent ? 5200 : 3200, t);
+    flt.frequency.exponentialRampToValueAtTime(900, t + len * 0.8);
+
+    const g = ctx.createGain();
+    const peak = 0.32 * vel;
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(peak, t + 0.004);
+    g.gain.setValueAtTime(peak, t + len * 0.7);
+    g.gain.exponentialRampToValueAtTime(0.001, t + len);
+
+    o1.connect(flt); o2.connect(flt);
+    flt.connect(g); g.connect(out);
+    const end = t + len + 0.05;
+    o1.start(t); o1.stop(end);
+    o2.start(t); o2.stop(end);
+    lfo.start(t); lfo.stop(end);
   }
 
   /** Rough output level, used by the debug hook / tests. */

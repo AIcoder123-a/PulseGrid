@@ -1,8 +1,8 @@
 /* PulseGrid — midi.js
  *
  * Standard MIDI File (format 0) writer. Drums map to the GM percussion map on
- * channel 10, the mono bass exports chromatically on channel 1 — drop the
- * .mid into any DAW and the beat is there.
+ * channel 10, the mono bass exports chromatically on channel 1, the lead on
+ * channel 2 — drop the .mid into any DAW and the beat is there.
  */
 
 'use strict';
@@ -59,6 +59,13 @@ const MidiExport = {
             const vel = bn.accent ? 112 : 90;
             push(tick, 1, [0x90, bn.midi, vel]);              // note-on, channel 1
             push(tick + TICK_16 - 6, 2, [0x80, bn.midi, 0]);
+            notes++;
+          }
+          const ln = p.tracks.lead[s];
+          if (ln) {
+            const vel = ln.accent ? 112 : 90;
+            push(tick, 1, [0x91, ln.midi, vel]);              // note-on, channel 2
+            push(tick + TICK_16 - 6, 2, [0x81, ln.midi, 0]);
             notes++;
           }
         }

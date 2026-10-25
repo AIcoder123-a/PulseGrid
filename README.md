@@ -18,6 +18,7 @@
 - **Song mode** — chain patterns bar-by-bar (up to 16 bars) and the transport plays the arrangement; the grid auto-follows whatever bar is playing
 - **8 synthesized drum voices** — kick, snare, clap, closed/open hi-hat, tom, cowbell, shaker — each built from oscillators and shaped noise, 808-style, with authentic **open-hat choking**; every drum cell supports **accents** (double-click) for velocity dynamics
 - **Mono bass synth** with a chromatic piano roll (C2–C3), per-step accents and an enveloped resonant low-pass (acid squelch included), plus its own mute / solo / volume strip
+- **Mono lead synth** — two detuned saws with vibrato through an enveloped filter, C4–C5 melody lane with its own strip; drums · bass · lead, the full trio
 - **Sample-accurate sequencing** via the lookahead scheduler pattern — timing never drifts, even when the main thread stutters, and playback keeps running steadily in **background tabs** (lookahead widens automatically when the tab is hidden)
 - **Swing** from straight to lazy, applied at scheduling time
 - **4 pattern banks (A–D)** switchable live while the transport runs — by mouse or keys `1`–`4`
@@ -26,7 +27,7 @@
 - **Genre presets**: House, Hip-Hop, Techno, Synthwave — each with a main groove and a variation
 - **Real-time spectrum + waveform visualizer** on canvas
 - **Sound Design panel** — per-drum **tune** and **decay** knobs with instant audition; sound design travels with live playback, WAV renders and share links
-- **MIDI export** — standard `.mid` file (drums on GM channel 10, chromatic bass on channel 1); drop it straight into any DAW
+- **MIDI export** — standard `.mid` file (drums on GM channel 10, chromatic bass on channel 1, lead on channel 2); drop it straight into any DAW
 - **WAV export** — renders your patterns (or the whole song chain) through an `OfflineAudioContext` using the exact same synthesis code, faster than real time
 - **Share links** — one click encodes the whole project state into the URL (base64url in the hash); open the link and the beat is there
 - **Autosave** to localStorage (flushed on tab hide/close), **export/import** patterns as JSON, destructive Clear guarded by a two-step confirm
@@ -45,14 +46,14 @@ python -m http.server 8000     # or: npx serve
 
 No server? No problem — open `index.html` directly from your file manager. It works the same.
 
-**Put it online:** push to GitHub, then in *Settings → Pages* set Source to **GitHub Actions** — the included workflow (`.github/workflows/deploy.yml`) deploys the site on every push to `main`.
+**Put it online:** push to GitHub, then in *Settings → Pages* set Source to **GitHub Actions** — the included workflow deploys on every push to `main` **after CI passes** (a red build never replaces the live site).
 
 ## 🎛 How to play
 
 1. Hit **🎲 Generate** — instant groove in A, variation in B (or pick a preset)
 2. Press **Play** (or `Space`)
 3. Toggle steps by clicking (or drag-painting); **double-click** a lit drum cell for an accent, right-click to clear it — with the transport stopped, every edit **auditions the sound instantly**
-4. Click bass-roll cells: once = note, twice = **accent**, three times = off
+4. Click bass-roll cells: once = note, twice = **accent**, three times = off — same for the **lead** roll (C4–C5)
 5. Turn on **Song** mode, chain A–D into bars with **+ Bar**, and let the arrangement play
 6. Ride the **Filter** knob for builds, add **Delay/Reverb** for space; 🧬 **Mutate** nudges the current pattern somewhere new
 7. Shape the kit itself in **Sound Design** — detune the kick, stretch the snare decay
@@ -121,6 +122,8 @@ Open the console on a running instance and poke at it: `PG.seq.stop()`, `PG.stat
 - [x] MIDI file export
 - [x] Zero-dependency test suite + CI (Node 18/20/22)
 - [x] PWA install (manifest + service worker + generated icons)
+- [x] Lead synth (detuned saws + vibrato, C4–C5)
+- [x] Deploy gated on green CI
 - [ ] Browser E2E in CI
 
 ## 🤝 Contributing
@@ -143,4 +146,4 @@ The suite covers the pure data layer — pattern DSL, generator rules, share cod
 
 ## 中文说明
 
-**PulseGrid** 是一个纯 Web Audio API 实时合成的浏览器鼓机 + 贝斯音序器:零依赖、零构建、零采样,双击 `index.html` 即可运行。🎲 一键生成五种曲风的节拍(A 主 groove + B 变奏),🧬 变异按钮让节奏进化;鼓格支持重音、贝斯钢琴卷帘带重音、四组 Pattern 可编排成最多 16 小节的 Song 自动连播;Sound Design 面板可调每个鼓的音高与衰减;一键离线渲染 WAV、导出标准 MIDI(鼓走 10 通道、贝斯走 1 通道,直接拖进 DAW),或生成携带完整状态的分享链接。欢迎 Star / PR,新预设和新生成曲风都是很好的上手贡献。
+**PulseGrid** 是一个纯 Web Audio API 实时合成的浏览器鼓机 + 贝斯/主奏音序器:零依赖、零构建、零采样,双击 `index.html` 即可运行。🎲 一键生成五种曲风的完整节拍(鼓 + 贝斯 + 旋律,A 主 groove + B 变奏),🧬 变异按钮让节奏进化;鼓格支持重音、两个钢琴卷帘(贝斯 C2–C3、主奏 C4–C5)带重音、四组 Pattern 可编排成最多 16 小节的 Song 自动连播;Sound Design 面板可调每个鼓的音高与衰减;一键离线渲染 WAV、导出标准 MIDI(鼓走 10 通道、贝斯 1、主奏 2,直接拖进 DAW),或生成携带完整状态的分享链接。欢迎 Star / PR,新预设和新生成曲风都是很好的上手贡献。

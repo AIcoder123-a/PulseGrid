@@ -9,6 +9,13 @@
 const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 const midiName = (m) => NOTE_NAMES[m % 12] + (Math.floor(m / 12) - 1);
 
+/** '36+' → { midi: 36, accent: true }; '' / junk → null */
+function parseNoteTok(tok) {
+  if (!tok) return null;
+  const m = tok.match(/^(\d+)(\+?)$/);
+  return m ? { midi: +m[1], accent: m[2] === '+' } : null;
+}
+
 const $ = (id) => document.getElementById(id);
 
 const UI = {
@@ -25,6 +32,7 @@ const UI = {
   build() {
     this.buildTracks();
     this.buildRoll();
+    this.buildLeadRoll();
     this.buildPatternButtons();
     this.buildPresets();
     this.buildSong();
@@ -36,6 +44,98 @@ const UI = {
     this.bindExportTools();
     this.bindKeys();
     requestAnimationFrame(() => this._tick());
+  },
+
+  buildLeadRoll() {
+    const host = $('leadroll');
+
+    const bar = document.createElement('div');
+    bar.className = 'lane bass-bar';
+    bar.style.setProperty('--c', '#fbbf24');
+    bar.innerHTML =
+      `<div class="lane-ctl">` +
+      `<button class="mini mute" title="Mute lead">M</button>` +
+      `<button class="mini solo" title="Solo lead">S</button>` +
+      `<span class="dot"></span><span class="lane-name">Lead</span>` +
+      `<input type="range" class="lane-vol" min="0" max="100" title="Lead volume">` +
+      `</div><div class="lane-grid"></div>`;
+
+    const bMute = bar.querySelector('.mute');
+    const bSolo = bar.querySelector('.solo');
+    const bVol = bar.querySelector('.lane-vol');
+    bMute.addEventListener('click', () => {
+      const s = PG.state.trackState.lead;
+      s.mute = !s.mute;
+      bMute.classList.toggle('active', s.mute);
+      this.applyTrackGains();
+      PG.markDirty();
+    });
+    bSolo.addEventListener('click', () => {
+      const s = PG.state.trackState.lead;
+      s.solo = !s.solo;
+      bSolo.classList.toggle('active', s.solo);
+      this.applyTrackGains();
+      PG.markDirty();
+    });
+    bVol.addEventListener('input', () => {
+      PG.state.trackState.lead.vol = bVol.value / 100;
+      this.applyTrackGains();
+      PG.markDirty();
+    });
+    this.leadCtl = { mute: bMute, solo: bSolo, vol: bVol };
+    host.appendChild(bar);
+
+    this.leadCells = {};
+    for (let midi = LEAD_MIDI_HI; midi >= LEAD_MIDI_LO; midi--) {
+      const row = document.createElement('div');
+      row.className = 'roll-row';
+      if (midiName(midi).includes('#')) row.classList.add('sharp');
+
+      const label = document.createElement('span');
+      label.className = 'roll-label';
+      label.textContent = midiName(midi);
+      row.appendChild(label);
+
+      this.leadCells[midi] = [];
+      for (let s = 0; s < STEPS; s++) {
+        const cell = document.createElement('button');
+        cell.className = 'roll-cell lead-cell beat-' + (Math.floor(s / 4) % 2);
+        cell.dataset.s = s;
+        cell.title = `${midiName(midi)} · step ${s + 1}  (click: note → accent → off)`;
+        cell.addEventListener('click', () => this.cycleLeadCell(midi, s));
+        row.appendChild(cell);
+        this.leadCells[midi].push(cell);
+        (this.columns[s] || (this.columns[s] = [])).push(cell);
+      }
+      host.appendChild(row);
+    }
+  },
+
+  cycleLeadCell(midi, step) {
+    const lane = PG.state.patterns[PG.state.active].tracks.lead;
+    const cur = lane[step];
+    if (cur && cur.midi !== midi) {
+      this.refreshLeadCell(cur.midi, step, null);
+      lane[step] = null;
+    }
+    if (!cur || cur.midi !== midi) {
+      lane[step] = { midi, accent: false };
+      if (!PG.seq.isPlaying) PG.engine.previewLead(midi, false);
+    } else if (!cur.accent) {
+      cur.accent = true;
+      if (!PG.seq.isPlaying) PG.engine.previewLead(midi, true);
+    } else {
+      lane[step] = null;
+    }
+    this.refreshLeadCell(midi, step, lane[step]);
+    PG.markDirty();
+  },
+
+  refreshLeadCell(midi, step, note) {
+    const cell = this.leadCells[midi][step];
+    cell.classList.toggle('on', !!note);
+    cell.classList.toggle('acc', !!note && note.accent);
+    cell.setAttribute('aria-pressed', String(!!note));
   },
 
   /* ================= song mode ================= */
@@ -472,7 +572,8 @@ const UI = {
       const d = {};
       for (const t of TRACKS) d[t.id] = p.tracks[t.id].map((v) => (v === 2 ? 'X' : v ? 'x' : '.')).join('');
       const b = p.tracks.bass.map((n) => (n == null ? '' : n.midi + (n.accent ? '+' : ''))).join(',');
-      pats.push([i, { d, b }]);
+      const l = p.tracks.lead ? p.tracks.lead.map((n) => (n == null ? '' : n.midi + (n.accent ? '+' : ''))).join(',') : '';
+      pats.push([i, { d, b, l }]);
     });
     const payload = {
       v: 1,
@@ -537,12 +638,12 @@ const UI = {
         }
       }
       if (typeof src.b === 'string') {
-        p.tracks.bass = src.b.split(',').slice(0, STEPS).map((tok) => {
-          if (!tok) return null;
-          const m = tok.match(/^(\d+)(\+?)$/);
-          return m ? { midi: +m[1], accent: m[2] === '+' } : null;
-        });
+        p.tracks.bass = src.b.split(',').slice(0, STEPS).map(parseNoteTok);
         while (p.tracks.bass.length < STEPS) p.tracks.bass.push(null);
+      }
+      if (typeof src.l === 'string') {
+        p.tracks.lead = src.l.split(',').slice(0, STEPS).map(parseNoteTok);
+        while (p.tracks.lead.length < STEPS) p.tracks.lead.push(null);
       }
       st.patterns[i] = p;
     }
@@ -708,10 +809,11 @@ const UI = {
       const ep = emptyPattern();
       for (const k of Object.keys(ep.tracks)) {
         if (Array.isArray(p.tracks[k])) {
+          const isNoteLane = k === 'bass' || k === 'lead';
           // coerce legacy booleans, clamp values, enforce length
           ep.tracks[k] = p.tracks[k].slice(0, STEPS).map((v) =>
-            k === 'bass' ? v : (v === true ? 1 : v === false ? 0 : (v === 1 || v === 2 ? v : 0)));
-          while (ep.tracks[k].length < STEPS) ep.tracks[k].push(k === 'bass' ? null : 0);
+            isNoteLane ? v : (v === true ? 1 : v === false ? 0 : (v === 1 || v === 2 ? v : 0)));
+          while (ep.tracks[k].length < STEPS) ep.tracks[k].push(isNoteLane ? null : 0);
         }
       }
       return ep;
@@ -783,6 +885,11 @@ const UI = {
         this.refreshRollCell(midi, s, p.tracks.bass[s] && p.tracks.bass[s].midi === midi ? p.tracks.bass[s] : null);
       }
     }
+    for (let midi = LEAD_MIDI_LO; midi <= LEAD_MIDI_HI; midi++) {
+      for (let s = 0; s < STEPS; s++) {
+        this.refreshLeadCell(midi, s, p.tracks.lead[s] && p.tracks.lead[s].midi === midi ? p.tracks.lead[s] : null);
+      }
+    }
     // per-lane controls
     for (const cfg of TRACKS) {
       const lane = this.stepCells[cfg.id][0].closest('.lane');
@@ -795,6 +902,10 @@ const UI = {
     this.bassCtl.mute.classList.toggle('active', bts.mute);
     this.bassCtl.solo.classList.toggle('active', bts.solo);
     this.bassCtl.vol.value = Math.round(bts.vol * 100);
+    const lts = PG.state.trackState.lead;
+    this.leadCtl.mute.classList.toggle('active', lts.mute);
+    this.leadCtl.solo.classList.toggle('active', lts.solo);
+    this.leadCtl.vol.value = Math.round(lts.vol * 100);
   },
 
   refreshPatternButtons() {

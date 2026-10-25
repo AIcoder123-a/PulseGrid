@@ -25,10 +25,10 @@ const clamp01 = (p) => Math.max(0, Math.min(1, p));
 // minor pentatonic degrees over one octave
 const SCALE = [0, 3, 5, 7, 10];
 
-function noteNear(rng, root, spread) {
+function noteNear(rng, root, spread, lo = BASS_MIDI_LO, hi = BASS_MIDI_HI) {
   const deg = Math.floor(rng() * (spread + 1));
   const oct = ch(rng, 0.18) ? 12 : 0;
-  return Math.max(BASS_MIDI_LO, Math.min(BASS_MIDI_HI, root + SCALE[deg] + oct));
+  return Math.max(lo, Math.min(hi, root + SCALE[deg] + oct));
 }
 
 function emptyLanes() {
@@ -49,6 +49,9 @@ function genHouse(rng, dg) {
   for (let s = 0; s < 16; s++) if (ch(rng, clamp01(0.8 * dg))) p.tracks.shaker[s] = 1;
   for (const s of [2, 6, 10, 14]) {
     if (ch(rng, 0.85)) p.tracks.bass[s] = { midi: noteNear(rng, 36, 2), accent: s % 8 === 2 };
+  }
+  for (const s of [3, 7, 11, 15]) {
+    if (ch(rng, clamp01(0.55 * dg))) p.tracks.lead[s] = { midi: noteNear(rng, 60, 3, LEAD_MIDI_LO, LEAD_MIDI_HI), accent: false };
   }
   return { pattern: p, bpm: 120 + Math.round(rng() * 10), swing: +(0.05 + rng() * 0.06).toFixed(2) };
 }
@@ -75,6 +78,8 @@ function genHiphop(rng, dg) {
   for (const s of kickSlots) {
     if (ch(rng, 0.85)) p.tracks.bass[s] = { midi: noteNear(rng, 36, 2), accent: s === 0 };
   }
+  if (ch(rng, 0.6)) p.tracks.lead[pick(rng, [0, 4, 8, 12])] = { midi: noteNear(rng, 60, 3, LEAD_MIDI_LO, LEAD_MIDI_HI), accent: false };
+  if (ch(rng, 0.3)) p.tracks.lead[14] = { midi: noteNear(rng, 60, 3, LEAD_MIDI_LO, LEAD_MIDI_HI), accent: true };
   return { pattern: p, bpm: 84 + Math.round(rng() * 12), swing: +(0.24 + rng() * 0.1).toFixed(2) };
 }
 
@@ -92,6 +97,11 @@ function genTechno(rng, dg) {
   const root = 36;
   for (let s = 0; s < 16; s++) {
     p.tracks.bass[s] = { midi: s === 15 && ch(rng, 0.25) ? root + 12 : root, accent: s % 4 === 0 };
+  }
+  for (const s of [2, 6, 10, 14]) {
+    if (ch(rng, clamp01(0.6 * dg))) {
+      p.tracks.lead[s] = { midi: 63, accent: s === 2 };   // hypnotic one-note stab
+    }
   }
   return { pattern: p, bpm: 128 + Math.round(rng() * 12), swing: 0 };
 }
@@ -112,6 +122,10 @@ function genBreaks(rng, dg) {
     if (ch(rng, clamp01(0.55 * dg))) {
       p.tracks.bass[s] = { midi: noteNear(rng, 36, 3), accent: s === 0 };
     }
+  }
+  const riffSlots = [0, 6, 10].filter(() => ch(rng, 0.7));
+  for (const s of riffSlots) {
+    p.tracks.lead[s] = { midi: noteNear(rng, 60, 4, LEAD_MIDI_LO, LEAD_MIDI_HI), accent: s === 0 };
   }
   return { pattern: p, bpm: 108 + Math.round(rng() * 12), swing: +(0.06 + rng() * 0.06).toFixed(2) };
 }
@@ -153,15 +167,20 @@ function mutatePattern(src, rng, amount = 1) {
     }
   }
 
-  for (let s = 0; s < 16; s++) {
-    const n = p.tracks.bass[s];
-    if (!n) {
-      if (ch(rng, 0.05 * amount)) p.tracks.bass[s] = { midi: noteNear(rng, 36, 3), accent: false };
-      continue;
+  for (const lane of ['bass', 'lead']) {
+    const lo = lane === 'bass' ? BASS_MIDI_LO : LEAD_MIDI_LO;
+    const hi = lane === 'bass' ? BASS_MIDI_HI : LEAD_MIDI_HI;
+    const root = lane === 'bass' ? 36 : 60;
+    for (let s = 0; s < 16; s++) {
+      const n = p.tracks[lane][s];
+      if (!n) {
+        if (ch(rng, 0.05 * amount)) p.tracks[lane][s] = { midi: noteNear(rng, root, 3, lo, hi), accent: false };
+        continue;
+      }
+      if (ch(rng, 0.25)) n.midi = noteNear(rng, root, 3, lo, hi);
+      if (ch(rng, 0.15)) n.accent = !n.accent;
+      if (ch(rng, 0.06 * amount)) p.tracks[lane][s] = null;
     }
-    if (ch(rng, 0.25)) n.midi = noteNear(rng, 36, 3);
-    if (ch(rng, 0.15)) n.accent = !n.accent;
-    if (ch(rng, 0.06 * amount)) p.tracks.bass[s] = null;
   }
   return p;
 }

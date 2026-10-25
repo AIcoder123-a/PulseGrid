@@ -342,6 +342,10 @@ h2 .hint { font-weight: 400; text-transform: none; letter-spacing: 0.2px; opacit
   box-shadow: 0 0 14px rgba(244, 63, 94, 0.65);
 }
 .roll-cell.ph { outline: 1.5px solid rgba(235, 244, 255, 0.7); }
+.roll-cell.lead-cell.acc {
+  background: linear-gradient(180deg, #fde68a, #f59e0b);
+  box-shadow: 0 0 14px rgba(245, 158, 11, 0.65);
+}
 
 /* ---------- FX rack ---------- */
 
