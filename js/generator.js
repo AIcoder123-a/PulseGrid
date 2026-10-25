@@ -361,6 +361,34 @@ const Generator = {
     return mutatePattern(pattern, rng, amount);
   },
 
+  /** A full arrangement in one style: A verse, B chorus (mutation of A),
+   *  C break (kick stripped, tom fill), D build (chorus + snare roll) —
+   *  plus a ready-to-play 8-bar song chain. */
+  arrange(styleId, density, seed) {
+    const style = GEN_STYLES.find((x) => x.id === styleId) || GEN_STYLES[0];
+    const seedN = seed == null ? (Math.random() * 0x7fffffff) | 0 : seed;
+    const rng = mulberry32(seedN);
+    const dg = 0.4 + density * 1.2;
+    const A = style.fn(rng, dg);
+    const B = mutatePattern(A.pattern, mulberry32(seedN + 7), 1.2);
+
+    const C = clonePattern(A.pattern);
+    C.tracks.kick = C.tracks.kick.map((v, i) => (i === 0 ? v : 0));   // drop the kick
+    C.tracks.tom[15] = 1;                                             // fill hint
+
+    const D = clonePattern(B);
+    for (let s = 12; s < 16; s++) D.tracks.snare[s] = s % 2 ? 2 : 1;  // roll into the drop
+    D.tracks.ohat[6] = 1;
+
+    return {
+      patterns: [A.pattern, B, C, D],
+      song: { enabled: true, chain: [0, 0, 1, 1, 2, 3, 1, 1], reps: [1, 1, 1, 1, 1, 1, 2, 1] },
+      bpm: A.bpm,
+      swing: A.swing,
+      fx: A.fx,
+    };
+  },
+
   /** Random euclidean fill for a percussion lane: E(k, steps) with rotation. */
   euclidFill(seed, steps = 16) {
     const rng = mulberry32(seed == null ? (Math.random() * 0x7fffffff) | 0 : seed);

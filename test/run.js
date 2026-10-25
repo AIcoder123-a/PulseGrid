@@ -670,6 +670,23 @@ const run = async () => {
     eq(out[2], note, 'the same object moves with its step');
   });
 
+  await test('arrange: a full song per style, deterministic, structural', () => {
+    for (const style of ['house', 'dnb', 'afro']) {
+      const a1 = T.Generator.arrange(style, 0.55, 33);
+      const a2 = T.Generator.arrange(style, 0.55, 33);
+      eq(JSON.stringify(a1), JSON.stringify(a2), `${style} arrange is deterministic`);
+      ok(a1.patterns.length === 4 && a1.patterns.every(validPattern), `${style} 4 valid patterns`);
+      eq(a1.song.chain, [0, 0, 1, 1, 2, 3, 1, 1], `${style} chain shape`);
+      ok(a1.song.enabled, `${style} song enabled`);
+      ok(JSON.stringify(a1.patterns[0]) !== JSON.stringify(a1.patterns[1]), `${style} B differs from A`);
+      // C break: kick only on the downbeat
+      eq(a1.patterns[2].tracks.kick.filter((v) => v > 0).length, 1, `${style} break strips the kick`);
+      // D build: snare roll across the last four steps
+      ok(a1.patterns[3].tracks.snare.slice(12).every((v) => v > 0), `${style} build has the roll`);
+      ok(a1.bpm >= 60 && a1.bpm <= 200, `${style} bpm`);
+    }
+  });
+
   await test('offline render guard: clean error without OfflineAudioContext', async () => {
     let threw = null;
     try { await T.RenderWav.render(T.defaultState()); } catch (e) { threw = e.message; }

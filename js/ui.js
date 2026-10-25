@@ -520,6 +520,27 @@ const UI = {
       this.toast(t('tMutated', { p: ['A', 'B', 'C', 'D'][i] }));
     });
 
+    $('btnSongGen').addEventListener('click', () => {
+      this.pushUndo();
+      const sel = $('genStyle');
+      const style = sel.value;
+      const density = $('genDensity').value / 100;
+      const { patterns, song, bpm, swing, fx: fxParams } = Generator.arrange(style, density);
+      PG.state.patterns = patterns;
+      PG.state.song = song;
+      PG.state.bpm = bpm;
+      PG.state.swing = swing;
+      if (fxParams) {
+        PG.state.fx.pump = fxParams.pump ?? PG.state.fx.pump;
+        PG.state.fx.humanize = fxParams.humanize ?? PG.state.fx.humanize;
+      }
+      this.refreshAll();
+      this.applyEngineParams();
+      PG.markDirty();
+      const opt = sel.options[sel.selectedIndex];
+      this.toast(t('tSongGen', { style: opt ? opt.text : '🎼' }));
+    });
+
     $('btnEuc').addEventListener('click', () => {
       this.pushUndo();
       const steps = PG.state.steps || 16;
