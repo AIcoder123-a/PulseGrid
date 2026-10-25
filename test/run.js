@@ -101,8 +101,10 @@ const validBass = (lane) =>
     n.midi >= 36 && n.midi <= 48 && typeof n.accent === 'boolean'));
 const validLead = (lane) =>
   Array.isArray(lane) && lane.length === 16 &&
-  lane.every((n) => n === null || (n && typeof n === 'object' &&
-    n.midi >= 60 && n.midi <= 72 && typeof n.accent === 'boolean'));
+  lane.every((n) => n === null || (n && typeof n === 'object' && Array.isArray(n.notes) &&
+    n.notes.length >= 1 && n.notes.length <= 3 &&
+    n.notes.every((m) => Number.isInteger(m) && m >= 60 && m <= 72) &&
+    typeof n.accent === 'boolean'));
 const validPattern = (p) =>
   TRACKS.every((t) => validLane(p.tracks[t.id])) && validBass(p.tracks.bass) && validLead(p.tracks.lead);
 
@@ -224,13 +226,13 @@ const run = async () => {
     const p = T.emptyPattern();
     p.tracks.kick[0] = 2;                                   // accented kick
     p.tracks.bass[0] = { midi: 36, accent: false };         // C2
-    p.tracks.lead[0] = { midi: 67, accent: true };          // G4, accented
+    p.tracks.lead[0] = { notes: [67, 70, 74], accent: true };   // G4 minor triad, accented
     const st = T.defaultState();
     st.patterns = [p, T.emptyPattern(), T.emptyPattern(), T.emptyPattern()];
     st.song = { enabled: false, chain: [0, 1] };
     st.bpm = 120;
     const r = T.MidiExport.export(st);
-    eq({ bars: r.bars, notes: r.notes }, { bars: 2, notes: 6 }, '1 pattern x 2 loops, 3 notes each');
+    eq({ bars: r.bars, notes: r.notes }, { bars: 2, notes: 10 }, '1 pattern x 2 loops, 5 notes each');
 
     const b = new Uint8Array(await r.blob.arrayBuffer());
     eq(str(b, 0, 4), 'MThd');
@@ -246,7 +248,9 @@ const run = async () => {
 
     ok(find3(b, 0x99, 36, 110) >= 0, 'accented kick: note-on ch10, key 36, vel 110');
     ok(find3(b, 0x90, 36, 90) >= 0, 'bass note: note-on ch1, key 36, vel 90');
-    ok(find3(b, 0x91, 67, 112) >= 0, 'lead note: note-on ch2, key 67, vel 112');
+    ok(find3(b, 0x91, 67, 112) >= 0, 'lead chord root: note-on ch2, key 67, vel 112');
+    ok(find3(b, 0x91, 70, 112) >= 0, 'lead chord 3rd: note-on ch2, key 70');
+    ok(find3(b, 0x91, 74, 112) >= 0, 'lead chord 7th... key 74');
     ok(find3(b, 0xff, 0x2f, 0x00) >= 0, 'end-of-track present');
   });
 
@@ -267,7 +271,7 @@ const run = async () => {
     st.swing = 0.31;
     st.patterns[0].tracks.kick[0] = 2;
     st.patterns[0].tracks.bass[3] = { midi: 43, accent: true };
-    st.patterns[0].tracks.lead[5] = { midi: 67, accent: true };
+    st.patterns[0].tracks.lead[5] = { notes: [60, 63, 67], accent: true };
     st.song.chain = [0, 1, 3, 0];
     st.trackState.snare.tune = 1.5;
     st.trackState.snare.decay = 2;
@@ -344,6 +348,30 @@ const run = async () => {
     });
     eq(st.patterns.length, 4);
     ok(st.patterns.every(validPattern), 'every slot is a valid pattern after repair');
+  });
+
+  await test('normalizeState: legacy lead singles migrate, chords sanitize', () => {
+    const legacy = T.emptyPattern();
+    legacy.tracks.lead[0] = { midi: 67, accent: true };                          // v1.1 format
+    legacy.tracks.lead[1] = { notes: [60, 63, 67], accent: false };              // chord
+    legacy.tracks.lead[2] = { notes: [58, 90, 63, 63, 999], accent: 1 };         // junk values
+    legacy.tracks.lead[3] = 'garbage';
+    const st = ctx ? null : null; // noop guard for linters
+    const out = T.UI.normalizeState({ patterns: [legacy, T.emptyPattern(), T.emptyPattern(), T.emptyPattern()] });
+    const lead = out.patterns[0].tracks.lead;
+    eq(lead[0], { notes: [67], accent: true }, 'legacy single migrates');
+    eq(lead[1], { notes: [60, 63, 67], accent: false }, 'chord kept');
+    eq(lead[2], { notes: [63], accent: true }, 'out-of-range dropped, junk filtered, accent coerced');
+    eq(lead[3], null, 'garbage becomes rest');
+  });
+
+  await test('share codec: chord lead tokens roundtrip', () => {
+    const st = T.defaultState();
+    st.patterns[0].tracks.lead[2] = { notes: [60, 63, 67], accent: true };
+    ctx.PG.state = st;
+    const code = T.UI.encodeShare();
+    const back = T.UI.decodeShare(code);
+    eq(back.patterns[0].tracks.lead[2], { notes: [60, 63, 67], accent: true }, 'chord survives the link');
   });
 
   await test('normalizeState: legacy fx stays off for pump/humanize', () => {

@@ -30,8 +30,15 @@ function B(entries) {
   return a;
 }
 
-/** Same as B() for lead lanes (kept separate for readability). */
-const L = B;
+/** [[step, midiOrNotes, accent], ...] → lead lane. A number becomes a single
+ *  note, an array becomes a chord (1–3 notes). */
+function L(entries) {
+  const a = new Array(STEPS).fill(null);
+  for (const [s, notes, accent] of entries) {
+    a[s] = { notes: Array.isArray(notes) ? [...notes] : [notes], accent: !!accent };
+  }
+  return a;
+}
 
 /** Rolling 16th bass used by techno: accent every downbeat. */
 function rollingBass(midi) {
@@ -132,7 +139,7 @@ const PRESETS = [
           cowbell: P('................'),
           shaker:  P('.x.x.x.x.x.x.x.x'),
           bass:    rollingBass(36),
-          lead:    L([[3, 63, 0], [7, 63, 0], [11, 63, 1], [15, 63, 0]]),
+          lead:    L([[3, [63, 66, 70], 0], [7, [63, 66, 70], 0], [11, [63, 66, 70], 1], [15, [63, 66, 70], 0]]),
         },
       },
       { // B — rumble variation

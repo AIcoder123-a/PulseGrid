@@ -62,11 +62,13 @@ const MidiExport = {
             notes++;
           }
           const ln = p.tracks.lead[s];
-          if (ln) {
+          if (ln && Array.isArray(ln.notes)) {
             const vel = ln.accent ? 112 : 90;
-            push(tick, 1, [0x91, ln.midi, vel]);              // note-on, channel 2
-            push(tick + TICK_16 - 6, 2, [0x81, ln.midi, 0]);
-            notes++;
+            for (const m of ln.notes) {
+              push(tick, 1, [0x91, m, vel]);                  // note-on, channel 2
+              push(tick + TICK_16 - 6, 2, [0x81, m, 0]);
+              notes++;
+            }
           }
         }
         barStart += STEPS * TICK_16;

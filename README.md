@@ -18,7 +18,7 @@
 - **Song mode** — chain patterns bar-by-bar (up to 16 bars) and the transport plays the arrangement; the grid auto-follows whatever bar is playing
 - **8 synthesized drum voices** — kick, snare, clap, closed/open hi-hat, tom, cowbell, shaker — each built from oscillators and shaped noise, 808-style, with authentic **open-hat choking**; every drum cell supports **accents** (double-click) for velocity dynamics
 - **Mono bass synth** with a chromatic piano roll (C2–C3), per-step accents and an enveloped resonant low-pass (acid squelch included), plus its own mute / solo / volume strip
-- **Mono lead synth** — two detuned saws with vibrato through an enveloped filter, C4–C5 melody lane with its own strip; drums · bass · lead, the full trio
+- **Lead synth with chords** — two detuned saws per note with vibrato through a shared enveloped filter; the C4–C5 lane takes single notes or **minor triads** (♪ toggle), level-matched automatically
 - **Sample-accurate sequencing** via the lookahead scheduler pattern — timing never drifts, even when the main thread stutters, and playback keeps running steadily in **background tabs** (lookahead widens automatically when the tab is hidden)
 - **Swing** from straight to lazy, applied at scheduling time
 - **4 pattern banks (A–D)** switchable live while the transport runs — by mouse or keys `1`–`4`
@@ -55,7 +55,7 @@ No server? No problem — open `index.html` directly from your file manager. It 
 1. Hit **🎲 Generate** — instant groove in A, variation in B (or pick a preset)
 2. Press **Play** (or `Space`)
 3. Toggle steps by clicking (or drag-painting); **double-click** a lit drum cell for an accent, right-click to clear it — with the transport stopped, every edit **auditions the sound instantly**
-4. Click bass-roll cells: once = note, twice = **accent**, three times = off — same for the **lead** roll (C4–C5)
+4. Click bass-roll cells: once = note, twice = **accent**, three times = off — same for the **lead** roll (C4–C5); flip its **♪ toggle** and clicks place minor triads
 5. Turn on **Song** mode, chain A–D into bars with **+ Bar**, and let the arrangement play
 6. Ride the **Filter** knob for builds, add **Delay/Reverb** for space; **Pump** makes it breathe, **Humanize** loosens the grid; 🧬 **Mutate** nudges the current pattern somewhere new, **◎ Euc** drops a polyrhythm
 7. Shape the kit itself in **Sound Design** — detune the kick, stretch the snare decay
@@ -148,4 +148,4 @@ The suite covers the pure data layer — pattern DSL, generator rules, share cod
 
 ## 中文说明
 
-**PulseGrid** 是一个纯 Web Audio API 实时合成的浏览器鼓机 + 贝斯/主奏音序器:零依赖、零构建、零采样,双击 `index.html` 即可运行。🎲 一键生成七种曲风的完整节拍(鼓 + 贝斯 + 旋律,A 主 groove + B 变奏),🧬 变异、◎ 欧几里得节奏、A–K 键盘打鼓、Ctrl+Z 撤销/重做、侧链泵动与人性化;鼓格支持重音、两个钢琴卷帘(贝斯 C2–C3、主奏 C4–C5)带重音、四组 Pattern 可编排成最多 16 小节的 Song 自动连播;Sound Design 面板可调每个鼓的音高与衰减;一键离线渲染 WAV、导出标准 MIDI(鼓走 10 通道、贝斯 1、主奏 2,直接拖进 DAW),或生成携带完整状态的分享链接。欢迎 Star / PR,新预设和新生成曲风都是很好的上手贡献。
+**PulseGrid** 是一个纯 Web Audio API 实时合成的浏览器鼓机 + 贝斯/主奏音序器:零依赖、零构建、零采样,双击 `index.html` 即可运行。🎲 一键生成七种曲风的完整节拍(鼓 + 贝斯 + 旋律,A 主 groove + B 变奏),🧬 变异、◎ 欧几里得节奏、A–K 键盘打鼓、Ctrl+Z 撤销/重做、侧链泵动与人性化;鼓格支持重音、两个钢琴卷帘(贝斯 C2–C3、主奏 C4–C5 可切三和弦)带重音、四组 Pattern 可编排成最多 16 小节的 Song 自动连播;Sound Design 面板可调每个鼓的音高与衰减;一键离线渲染 WAV、导出标准 MIDI(鼓走 10 通道、贝斯 1、主奏 2,直接拖进 DAW),或生成携带完整状态的分享链接。欢迎 Star / PR,新预设和新生成曲风都是很好的上手贡献。

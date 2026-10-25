@@ -308,6 +308,7 @@ h2 .hint { font-weight: 400; text-transform: none; letter-spacing: 0.2px; opacit
 /* ---------- bass roll ---------- */
 
 .bass-bar { padding: 2px 0 8px; }
+.lead-bar .lane-ctl { grid-template-columns: repeat(3, 26px) 10px 40px 48px; }
 
 .roll-row {
   display: flex; align-items: center; gap: 8px;

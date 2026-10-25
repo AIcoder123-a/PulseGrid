@@ -16,6 +16,26 @@ function parseNoteTok(tok) {
   return m ? { midi: +m[1], accent: m[2] === '+' } : null;
 }
 
+/** '60.63.67+' → { notes: [60,63,67], accent: true }; '' / junk → null */
+function parseLeadTok(tok) {
+  if (!tok) return null;
+  const accent = tok.endsWith('+');
+  const notes = [...new Set(tok.replace(/\+$/, '').split('.').map(Number)
+    .filter((m) => Number.isInteger(m) && m >= LEAD_MIDI_LO && m <= LEAD_MIDI_HI))];
+  return notes.length ? { notes: notes.slice(0, 3), accent } : null;
+}
+
+/** Lead-lane sanitizer for normalizeState: accepts legacy { midi } singles
+ *  and { notes } chords, clamps/dedupes, returns null for junk. */
+function sanitizeLead(v) {
+  if (!v || typeof v !== 'object') return null;
+  const raw = typeof v.midi === 'number' ? [v.midi] : (Array.isArray(v.notes) ? v.notes : null);
+  if (!raw) return null;
+  const notes = [...new Set(raw.map((m) => Math.round(m))
+    .filter((m) => m >= LEAD_MIDI_LO && m <= LEAD_MIDI_HI))];
+  return notes.length ? { notes: notes.slice(0, 3), accent: !!v.accent } : null;
+}
+
 const $ = (id) => document.getElementById(id);
 
 const UI = {
@@ -53,12 +73,13 @@ const UI = {
     const host = $('leadroll');
 
     const bar = document.createElement('div');
-    bar.className = 'lane bass-bar';
+    bar.className = 'lane bass-bar lead-bar';
     bar.style.setProperty('--c', '#fbbf24');
     bar.innerHTML =
       `<div class="lane-ctl">` +
       `<button class="mini mute" title="Mute lead">M</button>` +
       `<button class="mini solo" title="Solo lead">S</button>` +
+      `<button class="mini chord" title="Chord mode: clicks place minor triads">♪</button>` +
       `<span class="dot"></span><span class="lane-name">Lead</span>` +
       `<input type="range" class="lane-vol" min="0" max="100" title="Lead volume">` +
       `</div><div class="lane-grid"></div>`;
@@ -86,6 +107,12 @@ const UI = {
       PG.markDirty();
     });
     this.leadCtl = { mute: bMute, solo: bSolo, vol: bVol };
+    const chordBtn = bar.querySelector('.chord');
+    chordBtn.addEventListener('click', () => {
+      this.chordMode = !this.chordMode;
+      chordBtn.classList.toggle('active', this.chordMode);
+      this.toast(this.chordMode ? 'Chord mode ON — clicks place minor triads' : 'Chord mode off');
+    });
     host.appendChild(bar);
 
     this.leadCells = {};
@@ -114,32 +141,43 @@ const UI = {
     }
   },
 
+  /** Lead step for `midi`: a minor triad in chord mode, a single note otherwise. */
+  buildLeadNotes(midi) {
+    if (!this.chordMode) return [midi];
+    const triad = [midi, midi + 3, midi + 7].filter((m) => m >= LEAD_MIDI_LO && m <= LEAD_MIDI_HI);
+    return triad.length >= 2 ? triad : [midi];
+  },
+
   cycleLeadCell(midi, step) {
     this.pushUndo(true);
     const lane = PG.state.patterns[PG.state.active].tracks.lead;
     const cur = lane[step];
-    if (cur && cur.midi !== midi) {
-      this.refreshLeadCell(cur.midi, step, null);
-      lane[step] = null;
-    }
-    if (!cur || cur.midi !== midi) {
-      lane[step] = { midi, accent: false };
-      if (!PG.seq.isPlaying) PG.engine.previewLead(midi, false);
+    const curHit = cur && cur.notes && cur.notes.includes(midi);
+    if (cur && !curHit) lane[step] = null;   // replace whatever sat in this column
+    if (!cur || !curHit) {
+      lane[step] = { notes: this.buildLeadNotes(midi), accent: false };
+      if (!PG.seq.isPlaying) PG.engine.previewLead(lane[step].notes, false);
     } else if (!cur.accent) {
       cur.accent = true;
-      if (!PG.seq.isPlaying) PG.engine.previewLead(midi, true);
+      if (!PG.seq.isPlaying) PG.engine.previewLead(cur.notes, true);
     } else {
       lane[step] = null;
     }
-    this.refreshLeadCell(midi, step, lane[step]);
+    this.refreshLeadCol(step);
     PG.markDirty();
   },
 
-  refreshLeadCell(midi, step, note) {
-    const cell = this.leadCells[midi][step];
-    cell.classList.toggle('on', !!note);
-    cell.classList.toggle('acc', !!note && note.accent);
-    cell.setAttribute('aria-pressed', String(!!note));
+  /** Light every cell of a lead column for its chord (or clear the column). */
+  refreshLeadCol(step) {
+    const note = PG.state.patterns[PG.state.active].tracks.lead[step];
+    const lit = note ? note.notes : [];
+    for (let midi = LEAD_MIDI_LO; midi <= LEAD_MIDI_HI; midi++) {
+      const cell = this.leadCells[midi][step];
+      const on = lit.includes(midi);
+      cell.classList.toggle('on', on);
+      cell.classList.toggle('acc', on && !!note && note.accent);
+      cell.setAttribute('aria-pressed', String(on));
+    }
   },
 
   /* ================= undo / redo ================= */
@@ -652,7 +690,9 @@ const UI = {
       const d = {};
       for (const t of TRACKS) d[t.id] = p.tracks[t.id].map((v) => (v === 2 ? 'X' : v ? 'x' : '.')).join('');
       const b = p.tracks.bass.map((n) => (n == null ? '' : n.midi + (n.accent ? '+' : ''))).join(',');
-      const l = p.tracks.lead ? p.tracks.lead.map((n) => (n == null ? '' : n.midi + (n.accent ? '+' : ''))).join(',') : '';
+      const l = p.tracks.lead
+        ? p.tracks.lead.map((n) => (n == null ? '' : n.notes.join('.') + (n.accent ? '+' : ''))).join(',')
+        : '';
       pats.push([i, { d, b, l }]);
     });
     const payload = {
@@ -729,7 +769,7 @@ const UI = {
         while (p.tracks.bass.length < STEPS) p.tracks.bass.push(null);
       }
       if (typeof src.l === 'string') {
-        p.tracks.lead = src.l.split(',').slice(0, STEPS).map(parseNoteTok);
+        p.tracks.lead = src.l.split(',').slice(0, STEPS).map(parseLeadTok);
         while (p.tracks.lead.length < STEPS) p.tracks.lead.push(null);
       }
       st.patterns[i] = p;
@@ -902,11 +942,12 @@ const UI = {
       const src = (p && typeof p === 'object' && p.tracks && typeof p.tracks === 'object') ? p.tracks : {};
       for (const k of Object.keys(ep.tracks)) {
         if (Array.isArray(src[k])) {
-          const isNoteLane = k === 'bass' || k === 'lead';
           // coerce legacy booleans, clamp values, enforce length
-          ep.tracks[k] = src[k].slice(0, STEPS).map((v) =>
-            isNoteLane ? v : (v === true ? 1 : v === false ? 0 : (v === 1 || v === 2 ? v : 0)));
-          while (ep.tracks[k].length < STEPS) ep.tracks[k].push(isNoteLane ? null : 0);
+          ep.tracks[k] = src[k].slice(0, STEPS).map((v) => {
+            if (k === 'lead') return sanitizeLead(v);
+            return k === 'bass' ? v : (v === true ? 1 : v === false ? 0 : (v === 1 || v === 2 ? v : 0));
+          });
+          while (ep.tracks[k].length < STEPS) ep.tracks[k].push(k === 'bass' || k === 'lead' ? null : 0);
         }
       }
       return ep;
@@ -980,11 +1021,7 @@ const UI = {
         this.refreshRollCell(midi, s, p.tracks.bass[s] && p.tracks.bass[s].midi === midi ? p.tracks.bass[s] : null);
       }
     }
-    for (let midi = LEAD_MIDI_LO; midi <= LEAD_MIDI_HI; midi++) {
-      for (let s = 0; s < STEPS; s++) {
-        this.refreshLeadCell(midi, s, p.tracks.lead[s] && p.tracks.lead[s].midi === midi ? p.tracks.lead[s] : null);
-      }
-    }
+    for (let s = 0; s < STEPS; s++) this.refreshLeadCol(s);
     // per-lane controls
     for (const cfg of TRACKS) {
       const lane = this.stepCells[cfg.id][0].closest('.lane');
