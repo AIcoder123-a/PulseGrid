@@ -51,7 +51,7 @@ const PRESETS = [
   {
     name: 'House',
     bpm: 124, swing: 0.10,
-    fx: { delay: 0.20, reverb: 0.16, filter: 16000 },
+    fx: { delay: 0.20, reverb: 0.16, filter: 16000, pump: 0.5, humanize: 0.1 },
     patterns: [
       { // A — main groove
         tracks: {
@@ -85,7 +85,7 @@ const PRESETS = [
   {
     name: 'Hip-Hop',
     bpm: 88, swing: 0.30,
-    fx: { delay: 0.12, reverb: 0.12, filter: 16000 },
+    fx: { delay: 0.12, reverb: 0.12, filter: 16000, pump: 0.25, humanize: 0.35 },
     patterns: [
       { // A — boom bap
         tracks: {
@@ -119,7 +119,7 @@ const PRESETS = [
   {
     name: 'Techno',
     bpm: 132, swing: 0,
-    fx: { delay: 0.24, reverb: 0.20, filter: 18000 },
+    fx: { delay: 0.24, reverb: 0.20, filter: 18000, pump: 0.6, humanize: 0.05 },
     patterns: [
       { // A — driving
         tracks: {
@@ -153,7 +153,7 @@ const PRESETS = [
   {
     name: 'Synthwave',
     bpm: 104, swing: 0.05,
-    fx: { delay: 0.26, reverb: 0.24, filter: 14000 },
+    fx: { delay: 0.26, reverb: 0.24, filter: 14000, pump: 0.4, humanize: 0.15 },
     patterns: [
       { // A — pumping octaves
         tracks: {

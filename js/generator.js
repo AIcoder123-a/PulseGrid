@@ -53,7 +53,7 @@ function genHouse(rng, dg) {
   for (const s of [3, 7, 11, 15]) {
     if (ch(rng, clamp01(0.55 * dg))) p.tracks.lead[s] = { midi: noteNear(rng, 60, 3, LEAD_MIDI_LO, LEAD_MIDI_HI), accent: false };
   }
-  return { pattern: p, bpm: 120 + Math.round(rng() * 10), swing: +(0.05 + rng() * 0.06).toFixed(2) };
+  return { pattern: p, bpm: 120 + Math.round(rng() * 10), swing: +(0.05 + rng() * 0.06).toFixed(2), fx: { pump: 0.5, humanize: 0.12 } };
 }
 
 function genHiphop(rng, dg) {
@@ -80,7 +80,7 @@ function genHiphop(rng, dg) {
   }
   if (ch(rng, 0.6)) p.tracks.lead[pick(rng, [0, 4, 8, 12])] = { midi: noteNear(rng, 60, 3, LEAD_MIDI_LO, LEAD_MIDI_HI), accent: false };
   if (ch(rng, 0.3)) p.tracks.lead[14] = { midi: noteNear(rng, 60, 3, LEAD_MIDI_LO, LEAD_MIDI_HI), accent: true };
-  return { pattern: p, bpm: 84 + Math.round(rng() * 12), swing: +(0.24 + rng() * 0.1).toFixed(2) };
+  return { pattern: p, bpm: 84 + Math.round(rng() * 12), swing: +(0.24 + rng() * 0.1).toFixed(2), fx: { pump: 0.25, humanize: 0.35 } };
 }
 
 function genTechno(rng, dg) {
@@ -103,7 +103,7 @@ function genTechno(rng, dg) {
       p.tracks.lead[s] = { midi: 63, accent: s === 2 };   // hypnotic one-note stab
     }
   }
-  return { pattern: p, bpm: 128 + Math.round(rng() * 12), swing: 0 };
+  return { pattern: p, bpm: 128 + Math.round(rng() * 12), swing: 0, fx: { pump: 0.6, humanize: 0.05 } };
 }
 
 function genBreaks(rng, dg) {
@@ -127,7 +127,7 @@ function genBreaks(rng, dg) {
   for (const s of riffSlots) {
     p.tracks.lead[s] = { midi: noteNear(rng, 60, 4, LEAD_MIDI_LO, LEAD_MIDI_HI), accent: s === 0 };
   }
-  return { pattern: p, bpm: 108 + Math.round(rng() * 12), swing: +(0.06 + rng() * 0.06).toFixed(2) };
+  return { pattern: p, bpm: 108 + Math.round(rng() * 12), swing: +(0.06 + rng() * 0.06).toFixed(2), fx: { pump: 0.3, humanize: 0.2 } };
 }
 
 function genTrap(rng, dg) {
@@ -155,11 +155,36 @@ function genTrap(rng, dg) {
       p.tracks.lead[s] = { midi: noteNear(rng, 60, 3, LEAD_MIDI_LO, LEAD_MIDI_HI), accent: false };
     }
   }
-  return { pattern: p, bpm: 130 + Math.round(rng() * 16), swing: +(rng() * 0.08).toFixed(2) };
+  return { pattern: p, bpm: 130 + Math.round(rng() * 16), swing: +(rng() * 0.08).toFixed(2), fx: { pump: 0.6, humanize: 0.1 } };
+}
+
+function genLofi(rng, dg) {
+  const p = emptyLanes();
+  const kickSlots = pick(rng, [[0, 10], [0, 7, 10], [0, 11]]);
+  kickSlots.forEach((s) => (p.tracks.kick[s] = 1));
+  p.tracks.snare[4] = 2; p.tracks.snare[12] = 2;
+  if (ch(rng, 0.5)) p.tracks.snare[pick(rng, [9, 11, 15])] = 1;   // ghost
+  for (let s = 0; s < 16; s += 2) {
+    if (ch(rng, clamp01(0.6 * dg))) p.tracks.chat[s] = 1;
+  }
+  if (ch(rng, 0.4)) p.tracks.ohat[6] = 1;
+  for (const s of [2, 5, 8, 14]) {
+    if (ch(rng, clamp01(0.4 * dg))) p.tracks.shaker[s] = 1;       // dusty ticks
+  }
+  for (let s = 0; s < 16; s += 2) {
+    if (ch(rng, clamp01(0.5 * dg))) p.tracks.bass[s] = { midi: noteNear(rng, 36, 3), accent: s === 0 };
+  }
+  for (const s of [0, 3, 6, 10, 12].filter(() => ch(rng, 0.45))) {
+    p.tracks.lead[s] = { midi: noteNear(rng, 60, 4, LEAD_MIDI_LO, LEAD_MIDI_HI), accent: false };
+  }
+  return {
+    pattern: p, bpm: 72 + Math.round(rng() * 12), swing: +(0.28 + rng() * 0.12).toFixed(2),
+    fx: { pump: 0.2, humanize: 0.45 },
+  };
 }
 
 function genSurprise(rng, dg) {
-  const styles = [genHouse, genHiphop, genTechno, genBreaks, genTrap];
+  const styles = [genHouse, genHiphop, genTechno, genBreaks, genTrap, genLofi];
   const base = pick(rng, styles)(rng, dg);
   const p = base.pattern;
   // cross-pollinate: sprinkle elements from the other styles
@@ -175,8 +200,25 @@ const GEN_STYLES = [
   { id: 'techno',   name: 'Techno',   fn: genTechno },
   { id: 'breaks',   name: 'Breaks',   fn: genBreaks },
   { id: 'trap',     name: 'Trap',     fn: genTrap },
+  { id: 'lofi',     name: 'Lo-fi',    fn: genLofi },
   { id: 'surprise', name: 'Surprise', fn: genSurprise },
 ];
+
+/* ---------- euclidean rhythms ---------- */
+
+/** Even spacing of `pulses` hits over `steps` slots, rotated by `rotate`.
+ *  Bresenham-style distribution: exactly `pulses` hits, maximally even,
+ *  first hit on step 0 (Bjorklund convention). */
+function euclid(pulses, steps, rotate = 0) {
+  if (pulses <= 0) return new Array(steps).fill(0);
+  const pat = [];
+  for (let i = 0; i < steps; i++) {
+    const cur = Math.floor((i * pulses) / steps);
+    const prev = i === 0 ? -1 : Math.floor(((i - 1) * pulses) / steps);
+    pat.push(cur > prev ? 1 : 0);
+  }
+  return pat.slice(rotate % steps).concat(pat.slice(0, rotate % steps));
+}
 
 /* ---------- mutation ---------- */
 
@@ -226,5 +268,16 @@ const Generator = {
   mutate(pattern, seed, amount = 1) {
     const rng = mulberry32(seed == null ? (Math.random() * 0x7fffffff) | 0 : seed);
     return mutatePattern(pattern, rng, amount);
+  },
+
+  /** Random euclidean fill for a percussion lane: E(k, 16) with rotation. */
+  euclidFill(seed) {
+    const rng = mulberry32(seed == null ? (Math.random() * 0x7fffffff) | 0 : seed);
+    const targets = ['chat', 'ohat', 'tom', 'cowbell', 'shaker'];
+    const trackId = pick(rng, targets);
+    const k = 3 + Math.floor(rng() * 5);            // 3..7 pulses
+    const rotate = Math.floor(rng() * 16);
+    const lane = euclid(k, 16, rotate).map((v, i) => (v ? (i % 4 === 0 ? 2 : 1) : 0));
+    return { trackId, k, rotate, lane };
   },
 };

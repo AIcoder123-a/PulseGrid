@@ -60,7 +60,7 @@ vm.runInContext(`
   globalThis.PG = { state: defaultState() };
   globalThis.T = {
     STEPS, TRACKS, PRESETS, P, B, defaultState, emptyPattern, clonePattern,
-    makeSoftClipCurve, encodeWav, RenderWav, Generator, MidiExport, UI,
+    makeSoftClipCurve, encodeWav, RenderWav, Generator, euclid, MidiExport, UI,
   };
 `, ctx);
 const T = ctx.T;
@@ -174,8 +174,31 @@ const run = async () => {
     function singlet(v) { return typeof v === 'number' && v >= 0 && v <= 0.4; }
   });
 
+  await test('euclid: classic patterns, pulse conservation, rotation', () => {
+    eq(T.euclid(3, 8), [1, 0, 0, 1, 0, 0, 1, 0]);      // the classic tresillo
+    eq(T.euclid(2, 4), [1, 0, 1, 0]);
+    for (let k = 1; k <= 7; k++) {
+      const lane = T.euclid(k, 16, 5);
+      eq(lane.filter(Boolean).length, k, `E(${k},16) keeps exactly k pulses`);
+      eq(lane.length, 16);
+    }
+    const unrot = T.euclid(5, 16, 0);
+    const rot = T.euclid(5, 16, 3);
+    eq([...rot.slice(13), ...rot.slice(0, 13)], unrot, 'rotation is a cyclic shift');
+  });
+
+  await test('euclidFill: valid percussion lane with k pulses', () => {
+    for (let seed = 1; seed <= 20; seed++) {
+      const { trackId, k, lane } = T.Generator.euclidFill(seed);
+      ok(['chat', 'ohat', 'tom', 'cowbell', 'shaker'].includes(trackId), 'target is percussion');
+      ok(k >= 3 && k <= 7, 'k in 3..7');
+      eq(lane.filter((v) => v > 0).length, k, 'pulse count conserved');
+      ok(lane.every((v) => v === 0 || v === 1 || v === 2), 'values are 0/1/2');
+    }
+  });
+
   await test('generator: style bpm windows', () => {
-    const windows = { house: [120, 130], hiphop: [84, 96], techno: [128, 140], breaks: [108, 120], trap: [130, 146] };
+    const windows = { house: [120, 130], hiphop: [84, 96], techno: [128, 140], breaks: [108, 120], trap: [130, 146], lofi: [72, 84] };
     for (const [id, [lo, hi]] of Object.entries(windows)) {
       for (let seed = 1; seed <= 10; seed++) {
         const { bpm } = T.Generator.generate(id, 0.5, seed);
@@ -249,6 +272,8 @@ const run = async () => {
     st.trackState.snare.tune = 1.5;
     st.trackState.snare.decay = 2;
     st.trackState.bass.vol = 0.4;
+    st.fx.pump = 0.55;
+    st.fx.humanize = 0.3;
     ctx.PG.state = st;
 
     const code = T.UI.encodeShare();
@@ -260,6 +285,7 @@ const run = async () => {
     eq(back.trackState.snare, { vol: 0.8, mute: false, solo: false, tune: 1.5, decay: 2 }, 'sound design survives');
     eq(back.trackState.bass.vol, 0.4, 'track volume survives');
     eq([back.bpm, back.swing], [96, 0.31], 'transport survives');
+    eq([back.fx.pump, back.fx.humanize], [0.55, 0.3], 'pump & humanize survive');
 
     // idempotency: re-encoding a decoded state reproduces the same link
     ctx.PG.state = back;

@@ -79,6 +79,8 @@ const RenderWav = {
     eng.delayNode.delayTime.value = (60 / state.bpm) * 0.75;
     eng.delayBus.gain.value = state.fx.delay;
     eng.reverbBus.gain.value = state.fx.reverb;
+    eng.pump = state.fx.pump || 0;
+    eng.humanize = state.fx.humanize || 0;
 
     const anySolo = Object.values(state.trackState).some((t) => t.solo);
     for (const id of Object.keys(state.trackState)) {

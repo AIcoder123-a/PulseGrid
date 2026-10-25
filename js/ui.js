@@ -214,13 +214,18 @@ const UI = {
     $('btnGenerate').addEventListener('click', () => {
       const style = sel.value;
       const density = $('genDensity').value / 100;
-      const { pattern, bpm, swing } = Generator.generate(style, density);
+      const { pattern, bpm, swing, fx: fxParams } = Generator.generate(style, density);
       PG.state.patterns[0] = pattern;
       PG.state.patterns[1] = Generator.mutate(pattern);
       PG.state.active = 0;
       PG.state.bpm = bpm;
       PG.state.swing = swing;
+      if (fxParams) {
+        PG.state.fx.pump = fxParams.pump ?? PG.state.fx.pump;
+        PG.state.fx.humanize = fxParams.humanize ?? PG.state.fx.humanize;
+      }
       this.refreshAll();
+      this.applyEngineParams();
       PG.markDirty();
       const opt = sel.options[sel.selectedIndex];
       this.toast(`New ${opt ? opt.text : 'generated'} groove — A main / B variation`);
@@ -231,6 +236,16 @@ const UI = {
       this.refreshGrid();
       PG.markDirty();
       this.toast(`Pattern ${['A', 'B', 'C', 'D'][i]} mutated`);
+    });
+
+    $('btnEuc').addEventListener('click', () => {
+      const { trackId, k, rotate, lane } = Generator.euclidFill();
+      PG.state.patterns[PG.state.active].tracks[trackId] = lane;
+      this.refreshGrid();
+      PG.markDirty();
+      const names = { chat: 'Hi-Hat', ohat: 'Open Hat', tom: 'Tom', cowbell: 'Cowbell', shaker: 'Shaker' };
+      this.toast(`Euclid E(${k},16) r${rotate} → ${names[trackId]}`);
+      if (!PG.seq.isPlaying) PG.engine.preview(trackId);
     });
   },
 
@@ -555,6 +570,18 @@ const UI = {
       PG.engine.setMasterFilterHz(hz);
       PG.markDirty();
     });
+    $('fxPump').addEventListener('input', () => {
+      PG.state.fx.pump = $('fxPump').value / 100;
+      $('pumpVal').textContent = Math.round(PG.state.fx.pump * 100) + '%';
+      PG.engine.pump = PG.state.fx.pump;
+      PG.markDirty();
+    });
+    $('fxHumanize').addEventListener('input', () => {
+      PG.state.fx.humanize = $('fxHumanize').value / 100;
+      $('humanizeVal').textContent = Math.round(PG.state.fx.humanize * 100) + '%';
+      PG.engine.humanize = PG.state.fx.humanize;
+      PG.markDirty();
+    });
   },
 
   sliderToHz(v) { return Math.round(20 * Math.pow(18000 / 20, v / 100)); },
@@ -581,7 +608,8 @@ const UI = {
       bpm: st.bpm,
       sw: +st.swing.toFixed(2),
       mv: +st.masterVol.toFixed(2),
-      fx: [+st.fx.delay.toFixed(2), +st.fx.reverb.toFixed(2), Math.round(st.fx.filter)],
+      fx: [+st.fx.delay.toFixed(2), +st.fx.reverb.toFixed(2), Math.round(st.fx.filter),
+           +(st.fx.pump || 0).toFixed(2), +(st.fx.humanize || 0).toFixed(2)],
       ap: st.active,
       sc: st.song ? st.song.chain.slice(0, 16) : [0, 1],
       ts: (function () {   // non-default mix & sound design per track (drums + bass)
@@ -610,7 +638,13 @@ const UI = {
     st.swing = typeof d.sw === 'number' ? d.sw : st.swing;
     st.masterVol = typeof d.mv === 'number' ? d.mv : st.masterVol;
     if (Array.isArray(d.fx)) {
-      st.fx = { delay: d.fx[0] ?? st.fx.delay, reverb: d.fx[1] ?? st.fx.reverb, filter: d.fx[2] ?? st.fx.filter };
+      st.fx = {
+        delay: d.fx[0] ?? st.fx.delay,
+        reverb: d.fx[1] ?? st.fx.reverb,
+        filter: d.fx[2] ?? st.fx.filter,
+        pump: d.fx[3] ?? 0,        // legacy 3-tuple links predate pump/humanize
+        humanize: d.fx[4] ?? 0,
+      };
     }
     st.active = Math.min(3, Math.max(0, d.ap | 0));
     st.song = {
@@ -928,6 +962,10 @@ const UI = {
     $('reverbVal').textContent = Math.round(PG.state.fx.reverb * 100) + '%';
     $('fxFilter').value = this.hzToSlider(PG.state.fx.filter);
     $('filterVal').textContent = this.formatHz(PG.state.fx.filter);
+    $('fxPump').value = Math.round((PG.state.fx.pump || 0) * 100);
+    $('pumpVal').textContent = Math.round((PG.state.fx.pump || 0) * 100) + '%';
+    $('fxHumanize').value = Math.round((PG.state.fx.humanize || 0) * 100);
+    $('humanizeVal').textContent = Math.round((PG.state.fx.humanize || 0) * 100) + '%';
   },
 
   refreshAll() {
@@ -946,6 +984,8 @@ const UI = {
     PG.engine.setMasterFilterHz(PG.state.fx.filter);
     PG.engine.setDelayMix(PG.state.fx.delay);
     PG.engine.setReverbMix(PG.state.fx.reverb);
+    PG.engine.pump = PG.state.fx.pump || 0;
+    PG.engine.humanize = PG.state.fx.humanize || 0;
     this.applyTrackGains();
   },
 

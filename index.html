@@ -79,6 +79,7 @@
         <label>Density <input type="range" id="genDensity" min="0" max="100" value="55"></label>
         <button id="btnGenerate" class="btn-gen">🎲 Generate</button>
         <button id="btnMutate" class="mini">🧬 Mutate</button>
+        <button id="btnEuc" class="mini" title="Fill a random percussion lane with a rotated euclidean rhythm E(k,16)">◎ Euc</button>
       </div>
     </section>
 
@@ -138,6 +139,14 @@
         <div class="fx-unit">
           <label>Filter <output id="filterVal">16.0 kHz</output></label>
           <input type="range" id="fxFilter" min="0" max="100" value="98">
+        </div>
+        <div class="fx-unit">
+          <label>Pump <output id="pumpVal">0%</output></label>
+          <input type="range" id="fxPump" min="0" max="100" value="0" title="Sidechain: bass & lead duck under the kick">
+        </div>
+        <div class="fx-unit">
+          <label>Humanize <output id="humanizeVal">0%</output></label>
+          <input type="range" id="fxHumanize" min="0" max="100" value="0" title="Micro timing / velocity jitter">
         </div>
       </div>
     </section>

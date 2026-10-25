@@ -83,6 +83,10 @@ class AudioEngine {
     // live engine, offline WAV rendering, previews and share links.
     this.sound = {};
     for (const cfg of TRACKS) this.sound[cfg.id] = { tune: 1, decay: 1 };
+    // sidechain pump: how hard bass/lead duck under the kick (0..1)
+    this.pump = 0;
+    // humanize: micro timing (±8 ms) and velocity (±15%) jitter (0..1)
+    this.humanize = 0;
   }
 
   setSound(id, params) {
@@ -192,17 +196,22 @@ class AudioEngine {
     this.convolver.connect(this.reverbWet);
     this.reverbWet.connect(this.masterIn);
 
+    // ---- duck bus: bass + lead dip under the kick (sidechain pump) ----
+    this.duckBus = ctx.createGain();
+    this.duckBus.gain.value = 1;
+    this.duckBus.connect(this.masterIn);
+
     // ---- per-track strips ----
     for (const cfg of TRACKS) this._makeTrack(cfg);
-    this._makeTrack({ id: 'bass', name: 'Bass', color: '#e879f9', gain: 0.95, delay: 0.12, reverb: 0.08 });
-    this._makeTrack({ id: 'lead', name: 'Lead', color: '#fbbf24', gain: 0.55, delay: 0.35, reverb: 0.28 });
+    this._makeTrack({ id: 'bass', name: 'Bass', color: '#e879f9', gain: 0.95, delay: 0.12, reverb: 0.08 }, true);
+    this._makeTrack({ id: 'lead', name: 'Lead', color: '#fbbf24', gain: 0.55, delay: 0.35, reverb: 0.28 }, true);
   }
 
-  _makeTrack(cfg) {
+  _makeTrack(cfg, ducked = false) {
     const ctx = this.ctx;
     const input = ctx.createGain();
     input.gain.value = cfg.gain;
-    input.connect(this.masterIn);
+    input.connect(ducked ? this.duckBus : this.masterIn);
 
     const delaySend = ctx.createGain();
     delaySend.gain.value = cfg.delay;
@@ -247,14 +256,27 @@ class AudioEngine {
   /* ---- sequencer entry point ---- */
 
   scheduleStep(pattern, step, t, stepDur) {
+    const h = this.humanize;
+    const jit = h ? () => (Math.random() * 2 - 1) : () => 0;
+    const tj = () => jit() * h * 0.008;             // ±8 ms timing
+    const vj = () => 1 + jit() * h * 0.15;          // ±15% velocity
+
     for (const cfg of TRACKS) {
       const v = pattern.tracks[cfg.id][step];
-      if (v) this.trigger(cfg.id, t, v === 2 ? 1.3 : 1);
+      if (!v) continue;
+      const vel = (v === 2 ? 1.3 : 1) * vj();
+      this.trigger(cfg.id, t + tj(), Math.min(1.6, vel));
+      if (cfg.id === 'kick' && this.pump > 0) {
+        // sidechain dip on bass/lead — the classic pump
+        const g = this.duckBus.gain;
+        g.setTargetAtTime(1 - this.pump * 0.85, t, 0.006);
+        g.setTargetAtTime(1, t + 0.11, 0.06);
+      }
     }
     const note = pattern.tracks.bass[step];
-    if (note) this.bassNote(t, note.midi, note.accent, stepDur);
+    if (note) this.bassNote(t + tj(), note.midi, note.accent, stepDur);
     const lead = pattern.tracks.lead[step];
-    if (lead) this.leadNote(t, lead.midi, lead.accent, stepDur);
+    if (lead) this.leadNote(t + tj(), lead.midi, lead.accent, stepDur);
   }
 
   trigger(id, t, vel = 1) {
