@@ -7,7 +7,7 @@
 
 'use strict';
 
-const CACHE = 'pulsegrid-v3';
+const CACHE = 'pulsegrid-v4';
 
 const ASSETS = [
   './',

@@ -130,8 +130,36 @@ function genBreaks(rng, dg) {
   return { pattern: p, bpm: 108 + Math.round(rng() * 12), swing: +(0.06 + rng() * 0.06).toFixed(2) };
 }
 
+function genTrap(rng, dg) {
+  const p = emptyLanes();
+  // half-time skeleton: sparse 808-ish kick, snare ONLY on the 3rd beat
+  const kickSlots = pick(rng, [[0, 7, 10], [0, 6, 11], [0, 10], [0, 3, 10]]);
+  kickSlots.forEach((s) => (p.tracks.kick[s] = 1));
+  if (ch(rng, clamp01(0.3 * dg))) p.tracks.kick[pick(rng, [13, 14, 15])] = 1;
+  p.tracks.snare[8] = 2;
+  if (ch(rng, 0.3)) p.tracks.snare[15] = 1;
+  // rolling hats: steady 16ths, downbeat accents, a few human gaps
+  for (let s = 0; s < 16; s++) {
+    if (ch(rng, clamp01(0.85 * dg))) p.tracks.chat[s] = (s % 4 === 0 || ch(rng, 0.15)) ? 2 : 1;
+  }
+  if (ch(rng, 0.5)) p.tracks.ohat[14] = 1;
+  if (ch(rng, clamp01(0.4 * dg))) p.tracks.tom[13] = 1;
+  // dark sub bass following the kick
+  for (const s of kickSlots) {
+    if (ch(rng, 0.8)) p.tracks.bass[s] = { midi: noteNear(rng, 36, 2), accent: s === 0 };
+  }
+  if (ch(rng, 0.4)) p.tracks.bass[12] = { midi: 41, accent: false };
+  // sparse minor motif
+  if (ch(rng, 0.7)) {
+    for (const s of [2, 5, 9, 12].filter(() => ch(rng, 0.5))) {
+      p.tracks.lead[s] = { midi: noteNear(rng, 60, 3, LEAD_MIDI_LO, LEAD_MIDI_HI), accent: false };
+    }
+  }
+  return { pattern: p, bpm: 130 + Math.round(rng() * 16), swing: +(rng() * 0.08).toFixed(2) };
+}
+
 function genSurprise(rng, dg) {
-  const styles = [genHouse, genHiphop, genTechno, genBreaks];
+  const styles = [genHouse, genHiphop, genTechno, genBreaks, genTrap];
   const base = pick(rng, styles)(rng, dg);
   const p = base.pattern;
   // cross-pollinate: sprinkle elements from the other styles
@@ -146,6 +174,7 @@ const GEN_STYLES = [
   { id: 'hiphop',   name: 'Hip-Hop',  fn: genHiphop },
   { id: 'techno',   name: 'Techno',   fn: genTechno },
   { id: 'breaks',   name: 'Breaks',   fn: genBreaks },
+  { id: 'trap',     name: 'Trap',     fn: genTrap },
   { id: 'surprise', name: 'Surprise', fn: genSurprise },
 ];
 

@@ -14,7 +14,7 @@
 
 ## ✨ Features
 
-- **🎲 Beat Generator** — rule-based grooves in five styles (House, Hip-Hop, Techno, Breaks, Surprise) with a density control; one click fills A with a main groove and B with a mutation of it, 🧬 **Mutate** evolves the active pattern in place
+- **🎲 Beat Generator** — rule-based grooves in six styles (House, Hip-Hop, Techno, Breaks, Trap, Surprise) with a density control; one click fills A with a main groove and B with a mutation of it, 🧬 **Mutate** evolves the active pattern in place
 - **Song mode** — chain patterns bar-by-bar (up to 16 bars) and the transport plays the arrangement; the grid auto-follows whatever bar is playing
 - **8 synthesized drum voices** — kick, snare, clap, closed/open hi-hat, tom, cowbell, shaker — each built from oscillators and shaped noise, 808-style, with authentic **open-hat choking**; every drum cell supports **accents** (double-click) for velocity dynamics
 - **Mono bass synth** with a chromatic piano roll (C2–C3), per-step accents and an enveloped resonant low-pass (acid squelch included), plus its own mute / solo / volume strip
@@ -146,4 +146,4 @@ The suite covers the pure data layer — pattern DSL, generator rules, share cod
 
 ## 中文说明
 
-**PulseGrid** 是一个纯 Web Audio API 实时合成的浏览器鼓机 + 贝斯/主奏音序器:零依赖、零构建、零采样,双击 `index.html` 即可运行。🎲 一键生成五种曲风的完整节拍(鼓 + 贝斯 + 旋律,A 主 groove + B 变奏),🧬 变异按钮让节奏进化;鼓格支持重音、两个钢琴卷帘(贝斯 C2–C3、主奏 C4–C5)带重音、四组 Pattern 可编排成最多 16 小节的 Song 自动连播;Sound Design 面板可调每个鼓的音高与衰减;一键离线渲染 WAV、导出标准 MIDI(鼓走 10 通道、贝斯 1、主奏 2,直接拖进 DAW),或生成携带完整状态的分享链接。欢迎 Star / PR,新预设和新生成曲风都是很好的上手贡献。
+**PulseGrid** 是一个纯 Web Audio API 实时合成的浏览器鼓机 + 贝斯/主奏音序器:零依赖、零构建、零采样,双击 `index.html` 即可运行。🎲 一键生成六种曲风的完整节拍(鼓 + 贝斯 + 旋律,A 主 groove + B 变奏),🧬 变异按钮让节奏进化;鼓格支持重音、两个钢琴卷帘(贝斯 C2–C3、主奏 C4–C5)带重音、四组 Pattern 可编排成最多 16 小节的 Song 自动连播;Sound Design 面板可调每个鼓的音高与衰减;一键离线渲染 WAV、导出标准 MIDI(鼓走 10 通道、贝斯 1、主奏 2,直接拖进 DAW),或生成携带完整状态的分享链接。欢迎 Star / PR,新预设和新生成曲风都是很好的上手贡献。

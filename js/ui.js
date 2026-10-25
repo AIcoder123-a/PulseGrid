@@ -222,7 +222,8 @@ const UI = {
       PG.state.swing = swing;
       this.refreshAll();
       PG.markDirty();
-      this.toast(`New ${sel.options[sel.selectedIndex].text} groove — A main / B variation`);
+      const opt = sel.options[sel.selectedIndex];
+      this.toast(`New ${opt ? opt.text : 'generated'} groove — A main / B variation`);
     });
     $('btnMutate').addEventListener('click', () => {
       const i = PG.state.active;

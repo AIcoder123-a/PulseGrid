@@ -166,13 +166,16 @@ const run = async () => {
         if (style.id === 'hiphop' || style.id === 'breaks') {
           ok(pattern.tracks.snare[4] === 2 && pattern.tracks.snare[12] === 2, `${style.id}#${seed} backbeat`);
         }
+        if (style.id === 'trap') {
+          ok(pattern.tracks.snare[8] === 2 && pattern.tracks.snare[4] === 0, `${style.id}#${seed} half-time snare`);
+        }
       }
     }
     function singlet(v) { return typeof v === 'number' && v >= 0 && v <= 0.4; }
   });
 
   await test('generator: style bpm windows', () => {
-    const windows = { house: [120, 130], hiphop: [84, 96], techno: [128, 140], breaks: [108, 120] };
+    const windows = { house: [120, 130], hiphop: [84, 96], techno: [128, 140], breaks: [108, 120], trap: [130, 146] };
     for (const [id, [lo, hi]] of Object.entries(windows)) {
       for (let seed = 1; seed <= 10; seed++) {
         const { bpm } = T.Generator.generate(id, 0.5, seed);
