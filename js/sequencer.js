@@ -93,4 +93,16 @@ class Sequencer {
     this.state.active = song.chain[this.songIndex];
     if (this.onSongAdvance) this.onSongAdvance(this.songIndex);
   }
+
+  /** The step that is audible at audio-clock time `now` (defaults to now).
+   *  Swing shifts actual onsets but quantizing to the straight grid is fine
+   *  for step recording. Pure enough to unit-test with a fake engine. */
+  currentStep(now) {
+    if (now == null) now = this.engine.ctx.currentTime;
+    const len = this.state.steps || 16;
+    const stepDur = 60 / this.state.bpm / 4;
+    const ahead = (this.nextTime - now) / stepDur;      // how far the schedule runs ahead
+    const behind = Math.ceil(ahead);                     // boundaries between now and the next one
+    return ((this.step - behind) % len + len) % len;
+  }
 }

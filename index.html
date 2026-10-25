@@ -27,6 +27,7 @@
     <div class="transport">
       <button id="btnPlay" class="btn-play">▶<span data-i18n="play">Play</span></button>
       <button id="btnStop" class="btn-stop" title="Stop">■</button>
+      <button id="btnRec" class="btn-rec" title="Record pad hits into the pattern while playing">●</button>
     </div>
 
     <div class="ctrl">
@@ -70,6 +71,7 @@
       <button id="btnShare" class="mini" title="Copy a link that encodes this whole project state" data-i18n="share">Share</button>
       <button id="btnExport" class="mini" data-i18n="export">Export</button>
       <button id="btnImport" class="mini" data-i18n="import">Import</button>
+      <button id="btnHelp" class="mini" title="Shortcuts">?</button>
       <input type="file" id="fileImport" accept="application/json" hidden>
     </div>
   </header>
@@ -168,6 +170,24 @@
   </footer>
 
   <div id="toast" role="status"></div>
+
+  <div id="help">
+    <div class="help-panel">
+      <div class="help-head">
+        <h3 data-i18n="helpTitle">Keyboard shortcuts</h3>
+        <button id="helpClose" class="mini" title="Close">✕</button>
+      </div>
+      <table class="help-table">
+        <tr><td><kbd>Space</kbd></td><td data-i18n="footSpace">play / stop</td></tr>
+        <tr><td><kbd>1</kbd>–<kbd>4</kbd></td><td data-i18n="footPat">switch pattern</td></tr>
+        <tr><td><kbd>A</kbd>–<kbd>K</kbd></td><td data-i18n="footPads">drum pads</td></tr>
+        <tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Y</kbd></td><td data-i18n="footUndo">undo / redo</td></tr>
+        <tr><td><kbd>?</kbd></td><td data-i18n="helpToggle">this help</td></tr>
+        <tr><td><kbd>Esc</kbd></td><td data-i18n="helpEsc">close</td></tr>
+      </table>
+      <p class="help-tip" data-i18n="helpRecTip">With ● REC on, pad hits while playing are quantized into the pattern.</p>
+    </div>
+  </div>
 
   <script src="js/audio-engine.js"></script>
   <script src="js/presets.js"></script>

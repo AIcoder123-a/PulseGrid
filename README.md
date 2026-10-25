@@ -33,7 +33,8 @@
 - **Autosave** to localStorage (flushed on tab hide/close), **export/import** patterns as JSON, destructive Clear guarded by a two-step confirm
 - **Bilingual UI** — English / 简体中文, one-click 🌐 toggle; the language follows your browser on first visit and is remembered
 - **Undo / Redo** — full project history (`Ctrl+Z` / `Ctrl+Y`); bursts of fine edits coalesce into one step
-- **Live drum pads** — the home row `A`–`K` triggers all eight voices in real time, even while the transport runs
+- **Live drum pads + REC** — the home row `A`–`K` triggers all eight voices in real time; flip **● REC** and your pad jams are quantized straight into the pattern (undo-able, accents preserved)
+- **Help overlay** — `?` lists every shortcut, `Esc` closes
 - Keyboard: `Space` = play/stop, `1`–`4` = pattern. Drag across step cells to paint.
 - **32-step patterns** — two-bar phrases behind the **16/32** toggle (shrinking asks for confirmation; undo restores everything); the generator writes two contrasting bars, exports follow the length
 - **Phone layout** — lanes stack and grids go full-width under 720px; the PWA is genuinely usable one-handed

@@ -257,6 +257,25 @@ const UI = {
     this.toast(n === 32 ? t('tLen32') : t('tLen16'));
   },
 
+  /** Quantize a live pad hit into the audible step (transport running). */
+  recordHit(id) {
+    const step = PG.seq.currentStep();
+    const lane = PG.state.patterns[PG.state.active].tracks[id];
+    if (lane[step]) return;                       // already written — keep accents intact
+    this.pushUndo(true);
+    this.setDrumCell(id, step, 1);
+    const cell = this.stepCells[id][step];
+    cell.classList.remove('rec-flash');
+    void cell.offsetWidth;                        // restart the animation
+    cell.classList.add('rec-flash');
+  },
+
+  toggleHelp(force) {
+    const el = $('help');
+    const show = force != null ? force : !el.classList.contains('open');
+    el.classList.toggle('open', show);
+  },
+
   /* ================= song mode ================= */
 
   buildSong() {
@@ -1208,9 +1227,30 @@ const UI = {
         this.refreshGrid();
         PG.markDirty();
       } else if (PADS[e.code] && !e.repeat) {
-        PG.engine.preview(PADS[e.code]);
+        const id = PADS[e.code];
+        if (PG.seq.isPlaying && PG.state.rec) {
+          this.recordHit(id);
+        } else {
+          PG.engine.preview(id);
+        }
+      } else if (e.key === '?') {
+        this.toggleHelp();
+      } else if (e.key === 'Escape') {
+        this.toggleHelp(false);
       }
     });
+
+    $('btnRec').addEventListener('click', () => {
+      PG.state.rec = !PG.state.rec;
+      const btn = $('btnRec');
+      btn.classList.toggle('active', PG.state.rec);
+      PG.markDirty();
+      this.toast(PG.state.rec ? t('tRecOn') : t('tRecOff'));
+    });
+
+    $('btnHelp').addEventListener('click', () => this.toggleHelp());
+    $('helpClose').addEventListener('click', () => this.toggleHelp(false));
+    $('help').addEventListener('click', (e) => { if (e.target.id === 'help') this.toggleHelp(false); });
 
     $('btnUndo').addEventListener('click', () => this.undo());
     $('btnRedo').addEventListener('click', () => this.redo());

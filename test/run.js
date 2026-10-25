@@ -480,6 +480,29 @@ const run = async () => {
     }
   });
 
+  await test('sequencer.currentStep: audible-step math', () => {
+    vm.runInContext('globalThis.Seq = Sequencer;', ctx);
+    const seq = new ctx.Seq();
+    seq.engine = { ctx: { currentTime: 10 } };
+    ctx.PG.state = Object.assign(ctx.PG.state, { bpm: 120, steps: 16 });
+    // bpm 120 -> stepDur 0.125s
+    seq.step = 4; seq.nextTime = 10 + 0.25;
+    eq(seq.currentStep(10 + 0.24), 3, 'just before the next boundary -> step-1');
+    eq(seq.currentStep(10 + 0.13), 3, 'inside the 3rd step window');
+    eq(seq.currentStep(10 + 0.25), 4, 'exactly on the boundary -> next step');
+    // wrap-around
+    seq.step = 0; seq.nextTime = 10 + 0.1;
+    eq(seq.currentStep(10 + 0.02), 15, 'wrap: one before step 0');
+    // 32 steps
+    ctx.PG.state.steps = 32;
+    seq.step = 17; seq.nextTime = 10 + 0.2;
+    eq(seq.currentStep(10 + 0.05), 15, '32-lane math (1.2 steps ahead -> step-2)');
+    // deep lookahead (background tab) still lands on the audible step
+    ctx.PG.state.steps = 16;
+    seq.step = 6; seq.nextTime = 10 + 0.25;   // scheduler ran 2 steps ahead
+    eq(seq.currentStep(10 + 0.05), 4, 'lookahead 2 steps -> audible is step-2');
+  });
+
   await test('offline render guard: clean error without OfflineAudioContext', async () => {
     let threw = null;
     try { await T.RenderWav.render(T.defaultState()); } catch (e) { threw = e.message; }
