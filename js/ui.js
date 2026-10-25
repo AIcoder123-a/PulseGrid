@@ -717,6 +717,10 @@ const UI = {
     // tap tempo
     let taps = [];
     $('btnTap').addEventListener('click', () => {
+      const tapBtn = $('btnTap');
+      tapBtn.classList.remove('tapped');
+      void tapBtn.offsetWidth;
+      tapBtn.classList.add('tapped');
       const now = performance.now();
       if (taps.length && now - taps[taps.length - 1] > 2000) taps = [];
       taps.push(now);

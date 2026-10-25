@@ -146,6 +146,12 @@ button.mini:disabled { opacity: 0.5; cursor: wait; }
 button.mini.active { color: #06121a; background: var(--accent); border-color: var(--accent); }
 button.mini.armed { color: #fff; background: var(--accent-2); border-color: var(--accent-2); }
 
+button.mini.tapped { animation: tappulse 0.3s ease-out; }
+@keyframes tappulse {
+  0% { background: var(--accent); color: #06121a; }
+  100% { background: var(--panel-2); color: var(--muted); }
+}
+
 .patterns { display: flex; gap: 6px; }
 .patterns .pat { position: relative; }
 .patterns .pat.has::after {
