@@ -56,6 +56,8 @@
     <div class="ctrl patterns" id="patternBtns"></div>
 
     <div class="ctrl actions">
+      <button id="btnUndo" class="mini" title="Undo (Ctrl+Z)">↶</button>
+      <button id="btnRedo" class="mini" title="Redo (Ctrl+Y)">↷</button>
       <button id="btnCopy" class="mini" title="Copy active pattern to the next slot">Copy→</button>
       <button id="btnClear" class="mini">Clear</button>
       <button id="btnWav" class="mini" title="Render patterns to a .wav file (offline, faster than real time)">WAV</button>
@@ -155,8 +157,9 @@
   <footer>
     <span><kbd>Space</kbd> play / stop</span>
     <span><kbd>1</kbd>–<kbd>4</kbd> switch pattern</span>
-    <span>Patterns switch live while playing</span>
-    <span><a href="https://github.com/" target="_blank" rel="noopener">PulseGrid</a> · pure Web Audio · no samples · MIT</span>
+    <span><kbd>A</kbd>–<kbd>K</kbd> drum pads</span>
+    <span><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Y</kbd> undo / redo</span>
+    <span><a href="https://github.com/AIcoder123-a/PulseGrid" target="_blank" rel="noopener">PulseGrid</a> · pure Web Audio · no samples · MIT</span>
   </footer>
 
   <div id="toast" role="status"></div>

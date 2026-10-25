@@ -30,6 +30,9 @@ const UI = {
   /* ================= build ================= */
 
   build() {
+    this.undoStack = [];
+    this.redoStack = [];
+    this._lastPushAt = 0;
     this.buildTracks();
     this.buildRoll();
     this.buildLeadRoll();
@@ -112,6 +115,7 @@ const UI = {
   },
 
   cycleLeadCell(midi, step) {
+    this.pushUndo(true);
     const lane = PG.state.patterns[PG.state.active].tracks.lead;
     const cur = lane[step];
     if (cur && cur.midi !== midi) {
@@ -136,6 +140,47 @@ const UI = {
     cell.classList.toggle('on', !!note);
     cell.classList.toggle('acc', !!note && note.accent);
     cell.setAttribute('aria-pressed', String(!!note));
+  },
+
+  /* ================= undo / redo ================= */
+
+  /** Snapshot the whole project state (plain JSON data). */
+  snapshot() { return JSON.stringify(PG.state); },
+
+  /** Call BEFORE a mutation. `coalesce` merges bursts of fine edits
+   *  (cell painting, slider drags) into one undo step. */
+  pushUndo(coalesce = false) {
+    const now = Date.now();
+    if (coalesce && this._lastPushAt && now - this._lastPushAt < 900) {
+      this._lastPushAt = now;
+      return;
+    }
+    this.undoStack.push(this.snapshot());
+    if (this.undoStack.length > 60) this.undoStack.shift();
+    this.redoStack.length = 0;
+    this._lastPushAt = now;
+  },
+
+  undo() {
+    if (!this.undoStack || !this.undoStack.length) { this.toast('Nothing to undo'); return; }
+    this.redoStack.push(this.snapshot());
+    PG.state = this.normalizeState(JSON.parse(this.undoStack.pop()));
+    this._lastPushAt = 0;
+    this.refreshAll();
+    this.applyEngineParams();
+    PG.markDirty();
+    this.toast('Undo');
+  },
+
+  redo() {
+    if (!this.redoStack || !this.redoStack.length) { this.toast('Nothing to redo'); return; }
+    this.undoStack.push(this.snapshot());
+    PG.state = this.normalizeState(JSON.parse(this.redoStack.pop()));
+    this._lastPushAt = 0;
+    this.refreshAll();
+    this.applyEngineParams();
+    PG.markDirty();
+    this.toast('Redo');
   },
 
   /* ================= song mode ================= */
@@ -182,6 +227,7 @@ const UI = {
       chip.title = `Bar ${slot + 1}: pattern ${letters[patIdx]} — click cycles, past D removes`;
       if (PG.seq.isPlaying && song.enabled && PG.seq.songIndex === slot) chip.classList.add('playing');
       chip.addEventListener('click', () => {
+        this.pushUndo(true);
         song.chain[slot] = (song.chain[slot] + 1) % 5;
         if (song.chain[slot] === 4) song.chain.splice(slot, 1);
         if (!song.chain.length) song.enabled = false;
@@ -212,6 +258,7 @@ const UI = {
       sel.appendChild(o);
     }
     $('btnGenerate').addEventListener('click', () => {
+      this.pushUndo();
       const style = sel.value;
       const density = $('genDensity').value / 100;
       const { pattern, bpm, swing, fx: fxParams } = Generator.generate(style, density);
@@ -231,6 +278,7 @@ const UI = {
       this.toast(`New ${opt ? opt.text : 'generated'} groove — A main / B variation`);
     });
     $('btnMutate').addEventListener('click', () => {
+      this.pushUndo();
       const i = PG.state.active;
       PG.state.patterns[i] = Generator.mutate(PG.state.patterns[i]);
       this.refreshGrid();
@@ -239,6 +287,7 @@ const UI = {
     });
 
     $('btnEuc').addEventListener('click', () => {
+      this.pushUndo();
       const { trackId, k, rotate, lane } = Generator.euclidFill();
       PG.state.patterns[PG.state.active].tracks[trackId] = lane;
       this.refreshGrid();
@@ -430,6 +479,7 @@ const UI = {
   },
 
   loadPreset(p) {
+    this.pushUndo();
     const st = PG.state;
     st.bpm = p.bpm;
     st.swing = p.swing;
@@ -496,6 +546,7 @@ const UI = {
     });
 
     $('btnCopy').addEventListener('click', () => {
+      this.pushUndo();
       const next = (PG.state.active + 1) % 4;
       PG.state.patterns[next] = clonePattern(PG.state.patterns[PG.state.active]);
       PG.state.active = next;
@@ -522,6 +573,7 @@ const UI = {
       this._clearArmed = false;
       btn.textContent = 'Clear';
       btn.classList.remove('armed');
+      this.pushUndo();
       PG.state.patterns[PG.state.active] = emptyPattern();
       this.refreshGrid();
       PG.markDirty();
@@ -809,6 +861,7 @@ const UI = {
         try {
           const data = JSON.parse(reader.result);
           if (!data || !Array.isArray(data.patterns)) throw new Error('bad file');
+          this.pushUndo();
           PG.state = this.normalizeState(data);
           this.refreshAll();
           this.applyEngineParams();
@@ -871,6 +924,7 @@ const UI = {
   /* ================= editing ================= */
 
   setDrumCell(trackId, step, val) {
+    this.pushUndo(true);
     PG.state.patterns[PG.state.active].tracks[trackId][step] = val;
     const cell = this.stepCells[trackId][step];
     cell.classList.toggle('on', !!val);
@@ -880,6 +934,7 @@ const UI = {
   },
 
   cycleBassCell(midi, step) {
+    this.pushUndo(true);
     const lane = PG.state.patterns[PG.state.active].tracks.bass;
     const cur = lane[step];
     // clicking a lit cell in another row clears that step first (mono bass)
@@ -1037,9 +1092,30 @@ const UI = {
   /* ================= misc ================= */
 
   bindKeys() {
+    // A–K home row = live drum pads (works while the transport runs)
+    const PADS = {
+      KeyA: 'kick', KeyS: 'snare', KeyD: 'clap', KeyF: 'chat',
+      KeyG: 'ohat', KeyH: 'tom', KeyJ: 'cowbell', KeyK: 'shaker',
+    };
     document.addEventListener('keydown', (e) => {
       const tag = (e.target.tagName || '').toUpperCase();
-      if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA' || e.target.isContentEditable) return;
+      const typing = tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA' || e.target.isContentEditable;
+      const mod = e.ctrlKey || e.metaKey;
+
+      if (mod && e.code === 'KeyZ') {
+        if (typing) return;                     // keep native undo inside fields
+        e.preventDefault();
+        e.shiftKey ? this.redo() : this.undo();
+        return;
+      }
+      if (mod && e.code === 'KeyY') {
+        if (typing) return;
+        e.preventDefault();
+        this.redo();
+        return;
+      }
+      if (typing || mod || e.altKey) return;
+
       if (e.code === 'Space') {
         e.preventDefault();
         this.togglePlay();
@@ -1048,8 +1124,13 @@ const UI = {
         this.refreshPatternButtons();
         this.refreshGrid();
         PG.markDirty();
+      } else if (PADS[e.code] && !e.repeat) {
+        PG.engine.preview(PADS[e.code]);
       }
     });
+
+    $('btnUndo').addEventListener('click', () => this.undo());
+    $('btnRedo').addEventListener('click', () => this.redo());
   },
 
   toast(msg) {
