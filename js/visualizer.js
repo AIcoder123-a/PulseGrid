@@ -16,6 +16,7 @@ class Visualizer {
     this.waveData = null;
     this.gradient = null;
     this.playing = false;
+    this.clipUntil = 0;          // latch the clip lamp for 1.5 s
     this._resize();
     window.addEventListener('resize', () => this._resize());
     this._loop = this._loop.bind(this);
@@ -52,6 +53,7 @@ class Visualizer {
     if (this.analyser && this.playing) {
       this._drawSpectrum();
       this._drawWave();
+      this._drawMeter(ts);
     } else {
       this._drawIdle(ts);
     }
@@ -92,6 +94,46 @@ class Visualizer {
     g.strokeStyle = 'rgba(235, 244, 255, 0.4)';
     g.lineWidth = 1.4;
     g.stroke();
+  }
+
+  /** Compact output meter: RMS bar, peak tick, clip lamp (top-right). */
+  _drawMeter(ts) {
+    const { g, W, H } = this;
+    this.analyser.getByteTimeDomainData(this.waveData);
+    let peak = 0, sum = 0, n = 0;
+    for (let i = 0; i < this.waveData.length; i += 4) {
+      const v = (this.waveData[i] - 128) / 128;
+      const a = v < 0 ? -v : v;
+      if (a > peak) peak = a;
+      sum += v * v; n++;
+    }
+    const rms = Math.sqrt(sum / n);
+    if (peak >= 0.985) this.clipUntil = ts + 1500;
+    const clipped = ts < this.clipUntil;
+
+    const mw = 110, mh = 10, mx = W - mw - 10, my = 8;
+    // rail
+    g.fillStyle = 'rgba(10, 14, 20, 0.75)';
+    g.fillRect(mx, my, mw, mh);
+    // rms bar
+    const rw = Math.max(1, Math.min(1, rms / 0.7) * mw);
+    g.fillStyle = clipped ? '#f43f5e' : 'rgba(34, 211, 238, 0.85)';
+    g.fillRect(mx, my, rw, mh);
+    // peak tick
+    const px = mx + Math.max(1, Math.min(1, peak / 0.9) * mw);
+    g.fillStyle = clipped ? '#fecdd3' : 'rgba(235, 244, 255, 0.9)';
+    g.fillRect(Math.min(mx + mw - 2, px), my, 2, mh);
+    // clip lamp
+    g.beginPath();
+    g.arc(mx - 10, my + mh / 2, 4, 0, Math.PI * 2);
+    g.fillStyle = clipped ? '#f43f5e' : '#1b2330';
+    g.fill();
+    if (clipped) {
+      g.strokeStyle = 'rgba(244, 63, 94, 0.5)';
+      g.lineWidth = 4;
+      g.stroke();
+      g.lineWidth = 1;
+    }
   }
 
   _drawIdle(ts) {

@@ -388,6 +388,15 @@ h2 .hint { font-weight: 400; text-transform: none; letter-spacing: 0.2px; opacit
   cursor: pointer;
   transition: background 0.07s ease, box-shadow 0.07s ease;
   -webkit-user-select: none; user-select: none;
+  /* without this, the phone's double-tap zoom swallows the 3-state click */
+  touch-action: manipulation;
+}
+
+.step:focus-visible,
+.roll-cell:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
 }
 .roll-cell:hover { background: #1b243499; }
 .roll-cell.on {
