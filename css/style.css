@@ -281,6 +281,25 @@ h2 .hint { font-weight: 400; text-transform: none; letter-spacing: 0.2px; opacit
   100% { box-shadow: 0 0 0 14px rgba(244, 63, 94, 0); }
 }
 
+#dropzone {
+  position: fixed; inset: 0;
+  display: none;
+  align-items: center; justify-content: center;
+  background: rgba(8, 22, 30, 0.72);
+  z-index: 70;
+  pointer-events: none;
+}
+#dropzone.open { display: flex; }
+.drop-hint {
+  padding: 26px 40px;
+  font-size: 16px; font-weight: 600;
+  color: var(--text);
+  background: var(--panel);
+  border: 2px dashed var(--accent);
+  border-radius: 14px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+
 #help {
   position: fixed; inset: 0;
   display: none;

@@ -1002,6 +1002,31 @@ const UI = {
     });
   },
 
+  handleImportFile(file) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const buf = reader.result;
+        const head = String.fromCharCode(...new Uint8Array(buf, 0, 4));
+        if (head === 'MThd') {
+          this.applyMidiImport(MidiImport.parse(buf));
+        } else {
+          const data = JSON.parse(new TextDecoder().decode(buf));
+          if (!data || !Array.isArray(data.patterns)) throw new Error('bad file');
+          this.pushUndo();
+          PG.state = this.normalizeState(data);
+          this.refreshAll();
+          this.applyEngineParams();
+          PG.markDirty();
+          this.toast(t('tImported'));
+        }
+      } catch (err) {
+        this.toast(t('tImportFail'));
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  },
+
   /** Route a parsed MIDI file into the project (lands in pattern A). */
   applyMidiImport(result) {
     this.pushUndo();
@@ -1091,30 +1116,30 @@ const UI = {
     $('btnImport').addEventListener('click', () => $('fileImport').click());
     $('fileImport').addEventListener('change', (e) => {
       const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = () => {
-        try {
-          const buf = reader.result;
-          const head = String.fromCharCode(...new Uint8Array(buf, 0, 4));
-          if (head === 'MThd') {
-            this.applyMidiImport(MidiImport.parse(buf));
-          } else {
-            const data = JSON.parse(new TextDecoder().decode(buf));
-            if (!data || !Array.isArray(data.patterns)) throw new Error('bad file');
-            this.pushUndo();
-            PG.state = this.normalizeState(data);
-            this.refreshAll();
-            this.applyEngineParams();
-            PG.markDirty();
-            this.toast(t('tImported'));
-          }
-        } catch (err) {
-          this.toast(t('tImportFail'));
-        }
-      };
-      reader.readAsArrayBuffer(file);
       e.target.value = '';
+      if (file) this.handleImportFile(file);
+    });
+
+    // drop a .mid / .json anywhere on the page to load it
+    let dragDepth = 0;
+    window.addEventListener('dragenter', (e) => {
+      if (!e.dataTransfer || ![...e.dataTransfer.types].includes('Files')) return;
+      e.preventDefault();
+      dragDepth++;
+      $('dropzone').classList.add('open');
+    });
+    window.addEventListener('dragover', (e) => e.preventDefault());
+    window.addEventListener('dragleave', (e) => {
+      if (!e.dataTransfer) return;
+      dragDepth = Math.max(0, dragDepth - 1);
+      if (!dragDepth) $('dropzone').classList.remove('open');
+    });
+    window.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dragDepth = 0;
+      $('dropzone').classList.remove('open');
+      const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+      if (file) this.handleImportFile(file);
     });
   },
 
