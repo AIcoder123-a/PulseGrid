@@ -338,6 +338,24 @@ const run = async () => {
     eq(st.active, 3, 'active clamped');
   });
 
+  await test('normalizeState: corrupted pattern entries are replaced, not fatal', () => {
+    const st = T.UI.normalizeState({
+      patterns: [null, { tracks: null }, 'junk', T.emptyPattern()],
+    });
+    eq(st.patterns.length, 4);
+    ok(st.patterns.every(validPattern), 'every slot is a valid pattern after repair');
+  });
+
+  await test('normalizeState: legacy fx stays off for pump/humanize', () => {
+    const noFx = T.UI.normalizeState({ bpm: 100 });
+    eq([noFx.fx.pump, noFx.fx.humanize], [0, 0], 'missing fx -> pump/humanize off');
+    const partial = T.UI.normalizeState({ fx: { delay: 0.3 } });
+    eq([partial.fx.pump, partial.fx.humanize], [0, 0], 'partial fx -> pump/humanize off');
+    eq(partial.fx.delay, 0.3, 'provided fx kept');
+    const modern = T.UI.normalizeState({ fx: { delay: 0.1, reverb: 0.1, filter: 15000, pump: 0.7, humanize: 0.2 } });
+    eq([modern.fx.pump, modern.fx.humanize], [0.7, 0.2], 'explicit values kept');
+  });
+
   await test('soft-clip curve: odd-symmetric, bounded, monotonic', () => {
     const c = Array.from(T.makeSoftClipCurve(0.9));
     const n = c.length;

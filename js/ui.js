@@ -828,6 +828,10 @@ const UI = {
     const trackTemplate = base.trackState;   // keep the full template — data may be sparse
     const st = Object.assign(base, data);
     st.fx = Object.assign(base.fx, data.fx || {});
+    // legacy saves predate pump/humanize — keep them off instead of
+    // inheriting preset values that would change how old projects sound
+    if (!data.fx || typeof data.fx.pump !== 'number') st.fx.pump = 0;
+    if (!data.fx || typeof data.fx.humanize !== 'number') st.fx.humanize = 0;
     st.trackState = st.trackState || {};
     for (const id of Object.keys(trackTemplate)) {
       const ts = st.trackState[id] || (st.trackState[id] = { ...trackTemplate[id] });
@@ -842,11 +846,12 @@ const UI = {
     while (st.patterns.length < 4) st.patterns.push(emptyPattern());
     st.patterns = st.patterns.map((p) => {
       const ep = emptyPattern();
+      const src = (p && typeof p === 'object' && p.tracks && typeof p.tracks === 'object') ? p.tracks : {};
       for (const k of Object.keys(ep.tracks)) {
-        if (Array.isArray(p.tracks[k])) {
+        if (Array.isArray(src[k])) {
           const isNoteLane = k === 'bass' || k === 'lead';
           // coerce legacy booleans, clamp values, enforce length
-          ep.tracks[k] = p.tracks[k].slice(0, STEPS).map((v) =>
+          ep.tracks[k] = src[k].slice(0, STEPS).map((v) =>
             isNoteLane ? v : (v === true ? 1 : v === false ? 0 : (v === 1 || v === 2 ? v : 0)));
           while (ep.tracks[k].length < STEPS) ep.tracks[k].push(isNoteLane ? null : 0);
         }
