@@ -589,6 +589,17 @@ const UI = {
         this.refreshGrid();
         PG.markDirty();
       });
+      b.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        if (i === PG.state.active) return;
+        this.pushUndo();
+        PG.state.patterns[i] = clonePattern(PG.state.patterns[PG.state.active]);
+        PG.state.active = i;
+        this.refreshPatternButtons();
+        this.refreshGrid();
+        PG.markDirty();
+        this.toast(t('tCopyTo', { p: names[i] }));
+      });
       host.appendChild(b);
       this.patternBtns.push(b);
     });
@@ -915,7 +926,7 @@ const UI = {
         const r = await RenderWav.render(PG.state);
         const a = document.createElement('a');
         a.href = URL.createObjectURL(r.blob);
-        a.download = 'pulsegrid-loop.wav';
+        a.download = `pulsegrid-${PG.state.bpm}bpm.wav`;
         a.click();
         URL.revokeObjectURL(a.href);
         this.toast(t('tWav', { s: r.seconds.toFixed(1), bars: r.bars, mb: (r.bytes / 1048576).toFixed(1) }));

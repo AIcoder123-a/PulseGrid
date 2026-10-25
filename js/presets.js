@@ -212,6 +212,81 @@ const PRESETS = [
   },
 ];
 
+/* ---------- first-visit demo song ----------
+ * A hand-authored arrangement that shows off the whole instrument:
+ * A verse groove, B chord-stab chorus, C break, D snare-roll build —
+ * chained by song mode with a repeat on the chorus. */
+const DEMO_PATTERNS = [
+  { // A — verse
+    tracks: {
+      kick:    P('x...x...x...x...'),
+      snare:   P('................'),
+      clap:    P('....x.......x...'),
+      chat:    P('..x...x...x...x.'),
+      ohat:    P('..............x.'),
+      tom:     P('................'),
+      cowbell: P('................'),
+      shaker:  P('x.x.x.x.x.x.x.x.'),
+      bass:    B([[0, 36, 1], [3, 36, 0], [6, 43, 0], [8, 36, 1], [11, 41, 0], [14, 43, 0]]),
+      lead:    L([[6, 60, 0], [7, 63, 0], [14, 67, 0]]),
+    },
+  },
+  { // B — chorus with chord stabs
+    tracks: {
+      kick:    P('x...x...x...x...'),
+      snare:   P('....X.......X...'),
+      clap:    P('................'),
+      chat:    P('x.x.x.x.x.x.x.x.'),
+      ohat:    P('......x.......x.'),
+      tom:     P('................'),
+      cowbell: P('................'),
+      shaker:  P('................'),
+      bass:    B([[0, 36, 1], [2, 36, 0], [4, 43, 0], [8, 41, 1], [10, 41, 0], [12, 43, 0]]),
+      lead:    L([[4, [63, 66, 70], 0], [12, [63, 66, 70], 1]]),
+    },
+  },
+  { // C — break: no kick, pads carry it
+    tracks: {
+      kick:    P('................'),
+      snare:   P('...............x'),
+      clap:    P('....x.......x...'),
+      chat:    P('..x...x...x...x.'),
+      ohat:    P('................'),
+      tom:     P('..........x.....'),
+      cowbell: P('................'),
+      shaker:  P('................'),
+      bass:    B([[8, 41, 0], [11, 43, 0]]),
+      lead:    L([[2, 60, 0], [5, 63, 0], [9, 67, 0], [13, 70, 0]]),
+    },
+  },
+  { // D — build: snare roll into the drop
+    tracks: {
+      kick:    P('x...x...x.x.x.x.'),
+      snare:   P('....x...x.x.xxxx'),
+      clap:    P('................'),
+      chat:    P('x.x.x.x.x.x.x.x.'),
+      ohat:    P('................'),
+      tom:     P('................'),
+      cowbell: P('................'),
+      shaker:  P('xxxxxxxxxxxxxxxx'),
+      bass:    B([[0, 36, 1], [4, 36, 0], [8, 41, 0], [12, 43, 1]]),
+      lead:    L([[8, [63, 66, 70], 1]]),
+    },
+  },
+];
+
+/** The first-visit project: demo arrangement with song mode ON. */
+function demoState() {
+  const st = defaultState();
+  st.bpm = 122;
+  st.swing = 0.08;
+  st.fx = { delay: 0.22, reverb: 0.18, filter: 16000, pump: 0.45, humanize: 0.12 };
+  st.patterns = DEMO_PATTERNS.map((p) => clonePattern(p));
+  st.song = { enabled: true, chain: [0, 0, 1, 1, 2, 3, 1, 1], reps: [1, 1, 1, 1, 1, 1, 2, 1] };
+  st.active = 0;
+  return st;
+}
+
 /** Deep copy of a pattern (patterns only contain plain data). */
 function clonePattern(p) {
   const tracks = {};

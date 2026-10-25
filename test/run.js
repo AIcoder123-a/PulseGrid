@@ -61,7 +61,7 @@ vm.runInContext(`
   globalThis.T = {
     STEPS, TRACKS, PRESETS, P, B, defaultState, emptyPattern, clonePattern,
     makeSoftClipCurve, encodeWav, RenderWav, Generator, euclid, MidiExport, UI,
-    STRINGS, TRACK_NAMES, t, LEAD_KEYS,
+    STRINGS, TRACK_NAMES, t, LEAD_KEYS, demoState,
   };
 `, ctx);
 const T = ctx.T;
@@ -530,6 +530,20 @@ const run = async () => {
     eq(back.song.reps, [2, 1], 'reps survive the link');
     const legacy = T.UI.normalizeState({ song: { chain: [0, 1] } });
     eq(legacy.song.reps, [1, 1], 'normalize backfills reps');
+  });
+
+  await test('demo song: valid patterns, song chain, normalization-stable', () => {
+    const st = T.demoState();
+    ok(st.song.enabled && st.song.chain.length === 8, 'demo song chain of 8 bars');
+    ok(st.song.chain.every((v) => v >= 0 && v <= 3), 'chain in range');
+    ok(st.song.reps.every((r) => r >= 1 && r <= 8), 'reps sane');
+    ok(st.patterns.length === 4 && st.patterns.every(validPattern), 'all 4 patterns valid');
+    ok(st.bpm >= 60 && st.bpm <= 200, 'bpm sane');
+    ok(st.fx.pump > 0 && st.fx.humanize > 0, 'demo uses the expressive FX');
+    // normalization must not mangle it (roundtrip stability)
+    const again = T.UI.normalizeState(JSON.parse(JSON.stringify(st)));
+    eq(again.patterns, st.patterns, 'survives a save/load cycle unchanged');
+    ok(again.song.enabled && again.song.chain.length === 8, 'song survives');
   });
 
   await test('offline render guard: clean error without OfflineAudioContext', async () => {

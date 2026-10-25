@@ -25,7 +25,10 @@ window.PG = {};
         if (raw) state = UI.normalizeState(JSON.parse(raw));
       } catch (e) { /* corrupted save — fall back to defaults */ }
     }
-    if (!state) state = defaultState();
+    if (!state) {
+      state = demoState();
+      window.__firstVisitDemo = true;
+    }
 
     const viz = new Visualizer(document.getElementById('viz'));
 
@@ -66,6 +69,7 @@ window.PG = {};
       UI.refreshSong();
     };
     if (shared && state) UI.toast(t('tShared'));
+    else if (window.__firstVisitDemo) UI.toast(t('tDemo'));
   }
 
   if (document.readyState === 'loading') {
