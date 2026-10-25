@@ -61,7 +61,7 @@ vm.runInContext(`
   globalThis.T = {
     STEPS, TRACKS, PRESETS, P, B, defaultState, emptyPattern, clonePattern,
     makeSoftClipCurve, encodeWav, RenderWav, Generator, euclid, MidiExport, UI,
-    STRINGS, TRACK_NAMES, t, LEAD_KEYS, demoState, AudioEngine,
+    STRINGS, TRACK_NAMES, t, LEAD_KEYS, demoState, AudioEngine, MidiImport,
   };
 `, ctx);
 const T = ctx.T;
@@ -559,6 +559,97 @@ const run = async () => {
     eng.setSound('lead', { tune: 99, decay: 0.01 });
     eq(eng.sound.lead, { tune: 2, decay: 0.4 }, 'clamped to ranges');
     eng.setSound('nope', { tune: 2 });      // unknown id — must not throw
+  });
+
+  await test('midi import: roundtrip of our own export', async () => {
+    const st = T.defaultState();
+    st.bpm = 120;
+    const p = T.emptyPattern();
+    p.tracks.kick[0] = 2;
+    p.tracks.snare[8] = 1;
+    p.tracks.bass[0] = { midi: 36, accent: true };
+    p.tracks.bass[6] = { midi: 43, accent: false };
+    p.tracks.lead[4] = { notes: [63, 66, 70], accent: false };
+    st.patterns = [p, T.emptyPattern(), T.emptyPattern(), T.emptyPattern()];
+    st.song = { enabled: true, chain: [0], reps: [1] };   // export exactly one bar
+    const r = T.MidiExport.export(st);
+    const buf = await r.blob.arrayBuffer();
+    const m = T.MidiImport.parse(buf);
+    eq(m.steps, 16, 'one bar stays 16');
+    ok(m.bpm >= 119 && m.bpm <= 121, 'tempo recovered');
+    eq(m.pattern.tracks.kick[0], 2, 'accented kick back as 2');
+    eq(m.pattern.tracks.snare[8], 1, 'snare back as 1');
+    eq(m.pattern.tracks.bass[0], { midi: 36, accent: true }, 'bass accent back');
+    eq(m.pattern.tracks.bass[6], { midi: 43, accent: false }, 'bass note back');
+    eq(m.pattern.tracks.lead[4], { notes: [63, 66, 70], accent: false }, 'chord back');
+    // lanes we did not export are empty
+    eq(m.pattern.tracks.ohat, new Array(16).fill(0), 'unexported lanes empty');
+
+    // pattern-mode export repeats the bar: the import faithfully sees 2 bars
+    st.song.enabled = false;
+    const r2 = T.MidiExport.export(st);
+    const m2 = T.MidiImport.parse(await r2.blob.arrayBuffer());
+    eq(m2.steps, 32, 'pattern-mode export (2 loops) reads as 32');
+    eq(m2.pattern.tracks.kick[16], 2, 'the repeat is preserved at step 16');
+  });
+
+  await test('midi import: two bars promote to 32 steps', async () => {
+    const a = T.Generator.generate('house', 0.6, 3).pattern;
+    const b = T.Generator.generate('techno', 0.6, 4).pattern;
+    const st = T.defaultState();
+    st.steps = 32;
+    st.bpm = 128;
+    st.patterns = [T.emptyPattern(32), T.emptyPattern(32), T.emptyPattern(32), T.emptyPattern(32)];
+    st.patterns[0].tracks.kick = [...a.tracks.kick, ...b.tracks.kick];
+    st.patterns[0].tracks.bass = [...a.tracks.bass, ...b.tracks.bass];
+    st.song = { enabled: false, chain: [0, 1] };
+    const r = T.MidiExport.export(st);       // pattern mode: 1 pattern x 2 loops = 4 bars!
+    const buf = await r.blob.arrayBuffer();
+    const m = T.MidiImport.parse(buf);
+    ok(m.bars === 4 || m.bars === 2, 'bars detected from content');
+    eq(m.steps, 32, 'multi-bar content promotes to 32');
+    ok(m.pattern.tracks.kick[0] !== 0, 'first downbeat present');
+  });
+
+  await test('midi import: pitched-channel fallback for DAW files', async () => {
+    // hand-built format-0: bass on ch3 (low), melody on ch5 (high), drums ch9
+    const ev = [];
+    const ppq = 480;
+    const push = (tick, bytes) => ev.push({ tick, bytes });
+    // tempo 500000 = 120bpm
+    push(0, [0xff, 0x51, 0x03, 0x07, 0xa1, 0x20]);
+    // ch3 bass C2 at step0; ch5 melody E4 at step2; drum 36 at step0 ch9
+    push(0, [0x92, 36, 100]);
+    push(0, [0x83, 36, 0]);                  // note-off ch3 (0x83) same tick pair below
+    push(0, [0x93, 36, 100]);
+    push(960, [0x83, 36, 0]);
+    push(960, [0x95, 64, 90]);
+    push(1440, [0x85, 64, 0]);
+    push(0, [0x99, 36, 100]);
+    push(120, [0x89, 36, 0]);
+    // assemble format 0
+    ev.sort((a, b) => a.tick - b.tick);
+    const body = [];
+    let last = 0;
+    const vlq = (n) => { const out = [n & 0x7f]; n = Math.floor(n / 128); while (n > 0) { out.unshift((n & 0x7f) | 0x80); n = Math.floor(n / 128); } return out; };
+    for (const e of ev) { body.push(...vlq(e.tick - last), ...e.bytes); last = e.tick; }
+    body.push(0, 0xff, 0x2f, 0x00);
+    const head = [0x4d, 0x54, 0x68, 0x64, 0, 0, 0, 6, 0, 0, 0, 1, (ppq >> 8) & 255, ppq & 255];
+    const trk = [0x4d, 0x54, 0x72, 0x6b, (body.length >>> 24) & 255, (body.length >>> 16) & 255, (body.length >>> 8) & 255, body.length & 255];
+    const blob = new ctx.Blob([new Uint8Array([...head, ...trk, ...body])]);
+    const buf = await blob.arrayBuffer();
+    const m = T.MidiImport.parse(buf);
+    eq(m.bpm, 120, 'tempo read');
+    ok(m.pattern.tracks.bass[0] && m.pattern.tracks.bass[0].midi === 36, 'low channel became bass');
+    const lead = m.pattern.tracks.lead[8];   // E4 at tick 960 = step 8
+    ok(lead && lead.notes[0] === 64, 'high channel became lead');
+  });
+
+  await test('midi import: garbage throws a clean error', async () => {
+    let msg = null;
+    try { T.MidiImport.parse(new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8])); }
+    catch (e) { msg = e.message; }
+    ok(/not a MIDI file/.test(msg || ''), 'throws not-a-MIDI');
   });
 
   await test('offline render guard: clean error without OfflineAudioContext', async () => {

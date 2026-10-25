@@ -997,6 +997,22 @@ const UI = {
     });
   },
 
+  /** Route a parsed MIDI file into the project (lands in pattern A). */
+  applyMidiImport(result) {
+    this.pushUndo();
+    PG.state.steps = result.steps;
+    PG.state.bpm = result.bpm || PG.state.bpm;
+    PG.state.patterns = [result.pattern,
+      emptyPattern(result.steps), emptyPattern(result.steps), emptyPattern(result.steps)];
+    PG.state.song = { enabled: false, chain: [0, 1], reps: [1, 1] };
+    PG.state.active = 0;
+    this.buildGrids();
+    this.refreshAll();
+    this.applyEngineParams();
+    PG.markDirty();
+    this.toast(t('tImportMid', { notes: result.notes, bars: result.bars }));
+  },
+
   /* ================= sound design ================= */
 
   buildSoundPanel() {
@@ -1074,19 +1090,25 @@ const UI = {
       const reader = new FileReader();
       reader.onload = () => {
         try {
-          const data = JSON.parse(reader.result);
-          if (!data || !Array.isArray(data.patterns)) throw new Error('bad file');
-          this.pushUndo();
-          PG.state = this.normalizeState(data);
-          this.refreshAll();
-          this.applyEngineParams();
-          PG.markDirty();
-          this.toast(t('tImported'));
+          const buf = reader.result;
+          const head = String.fromCharCode(...new Uint8Array(buf, 0, 4));
+          if (head === 'MThd') {
+            this.applyMidiImport(MidiImport.parse(buf));
+          } else {
+            const data = JSON.parse(new TextDecoder().decode(buf));
+            if (!data || !Array.isArray(data.patterns)) throw new Error('bad file');
+            this.pushUndo();
+            PG.state = this.normalizeState(data);
+            this.refreshAll();
+            this.applyEngineParams();
+            PG.markDirty();
+            this.toast(t('tImported'));
+          }
         } catch (err) {
           this.toast(t('tImportFail'));
         }
       };
-      reader.readAsText(file);
+      reader.readAsArrayBuffer(file);
       e.target.value = '';
     });
   },
