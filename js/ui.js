@@ -9,6 +9,11 @@
 const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 const midiName = (m) => NOTE_NAMES[m % 12] + (Math.floor(m / 12) - 1);
 
+/** Q–I row = C4..C5 white keys; Shift+Q/W/T/Y/U = the sharp to their left. */
+const LEAD_KEYS = {
+  KeyQ: 60, KeyW: 62, KeyE: 64, KeyR: 65, KeyT: 67, KeyY: 69, KeyU: 71, KeyI: 72,
+};
+
 /** '36+' → { midi: 36, accent: true }; '' / junk → null */
 function parseNoteTok(tok) {
   if (!tok) return null;
@@ -270,6 +275,18 @@ const UI = {
     cell.classList.add('rec-flash');
   },
 
+  /** Quantize a live lead-key hit into the audible step (transport running). */
+  recordLead(midi) {
+    const step = PG.seq.currentStep();
+    const lane = PG.state.patterns[PG.state.active].tracks.lead;
+    const cur = lane[step];
+    if (cur && cur.notes.length === 1 && cur.notes[0] === midi) return;  // already there
+    this.pushUndo(true);
+    lane[step] = { notes: [midi], accent: false };
+    this.refreshLeadCol(step);
+    PG.markDirty();
+  },
+
   toggleHelp(force) {
     const el = $('help');
     const show = force != null ? force : !el.classList.contains('open');
@@ -283,6 +300,7 @@ const UI = {
       const song = PG.state.song;
       if (!song.chain.length) {
         song.chain = [0, 1];
+        song.reps = [1, 1];
       }
       song.enabled = !song.enabled;
       if (song.enabled && PG.seq.isPlaying) {
@@ -297,11 +315,14 @@ const UI = {
       const song = PG.state.song;
       if (song.chain.length >= 16) return;
       song.chain.push(PG.state.active);
+      song.reps = song.reps || song.chain.map(() => 1);
+      song.reps.push(1);
       this.refreshSong();
       PG.markDirty();
     });
     $('btnSongClear').addEventListener('click', () => {
       PG.state.song.chain = [0, 1];
+      PG.state.song.reps = [1, 1];
       this.refreshSong();
       PG.markDirty();
     });
@@ -313,19 +334,35 @@ const UI = {
     const host = $('songChain');
     host.innerHTML = '';
     const letters = ['A', 'B', 'C', 'D'];
+    const reps = song.reps || (song.reps = song.chain.map(() => 1));
     song.chain.forEach((patIdx, slot) => {
       const chip = document.createElement('button');
       chip.className = 'song-chip';
-      chip.textContent = letters[patIdx];
-      chip.title = `Bar ${slot + 1}: pattern ${letters[patIdx]} — click cycles, past D removes`;
+      chip.textContent = letters[patIdx] + (reps[slot] > 1 ? '×' + reps[slot] : '');
+      chip.title = `Bar ${slot + 1}: pattern ${letters[patIdx]} — click cycles, right-click cycles repeats (×1–×4), past D removes`;
       if (PG.seq.isPlaying && song.enabled && PG.seq.songIndex === slot) chip.classList.add('playing');
       chip.addEventListener('click', () => {
         this.pushUndo(true);
         song.chain[slot] = (song.chain[slot] + 1) % 5;
-        if (song.chain[slot] === 4) song.chain.splice(slot, 1);
+        if (song.chain[slot] === 4) {
+          song.chain.splice(slot, 1);
+          song.reps.splice(slot, 1);
+        }
         if (!song.chain.length) song.enabled = false;
         this.refreshSong();
         PG.markDirty();
+      });
+      chip.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        this.pushUndo(true);
+        song.reps = song.reps || song.chain.map(() => 1);
+        song.reps[slot] = (song.reps[slot] || 1) % 4 + 1;
+        if (PG.seq.isPlaying && song.enabled) {
+          PG.seq._barsLeft = Math.max(0, (song.reps[PG.seq.songIndex] || 1) - 1);
+        }
+        this.refreshSong();
+        PG.markDirty();
+        this.toast(t('tRep', { n: song.reps[slot] }));
       });
       host.appendChild(chip);
     });
@@ -761,6 +798,8 @@ const UI = {
       fx: [+st.fx.delay.toFixed(2), +st.fx.reverb.toFixed(2), Math.round(st.fx.filter),
            +(st.fx.pump || 0).toFixed(2), +(st.fx.humanize || 0).toFixed(2)],
       n: st.steps === 32 ? 32 : undefined,
+      sr: st.song && st.song.reps && st.song.reps.some((r) => r > 1)
+        ? st.song.chain.map((_, i) => st.song.reps[i] || 1) : undefined,
       ap: st.active,
       sc: st.song ? st.song.chain.slice(0, 16) : [0, 1],
       ts: (function () {   // non-default mix & sound design per track (drums + bass)
@@ -806,6 +845,9 @@ const UI = {
       chain: Array.isArray(d.sc) ? d.sc.filter((v) => v >= 0 && v <= 3).slice(0, 16) : [0, 1],
     };
     if (!st.song.chain.length) st.song.chain = [0, 1];
+    st.song.reps = Array.isArray(d.sr)
+      ? st.song.chain.map((_, i) => Math.min(8, Math.max(1, d.sr[i] | 0 || 1)))
+      : st.song.chain.map(() => 1);
     if (d.ts && typeof d.ts === 'object') {
       const num = (x, dflt) => (typeof x === 'number' && Number.isFinite(x) ? x : dflt);
       for (const id of Object.keys(d.ts)) {
@@ -1021,6 +1063,8 @@ const UI = {
     } else {
       st.song.chain = st.song.chain.filter((v) => v >= 0 && v <= 3).slice(0, 16);
       if (!st.song.chain.length) st.song.chain = [0, 1];
+      const reps = Array.isArray(st.song.reps) ? st.song.reps : [];
+      st.song.reps = st.song.chain.map((_, i) => Math.min(8, Math.max(1, reps[i] | 0 || 1)));
     }
     st.active = Math.min(3, Math.max(0, st.active | 0));
     return st;
@@ -1232,6 +1276,14 @@ const UI = {
           this.recordHit(id);
         } else {
           PG.engine.preview(id);
+        }
+      } else if (LEAD_KEYS[e.code] && !e.repeat) {
+        let midi = LEAD_KEYS[e.code];
+        if (e.shiftKey && { KeyQ: 1, KeyW: 1, KeyR: 1, KeyT: 1, KeyY: 1 }[e.code]) midi += 1;
+        if (PG.seq.isPlaying && PG.state.rec) {
+          this.recordLead(midi);
+        } else {
+          PG.engine.previewLead([midi], false);
         }
       } else if (e.key === '?') {
         this.toggleHelp();

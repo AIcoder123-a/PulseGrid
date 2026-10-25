@@ -61,7 +61,7 @@ vm.runInContext(`
   globalThis.T = {
     STEPS, TRACKS, PRESETS, P, B, defaultState, emptyPattern, clonePattern,
     makeSoftClipCurve, encodeWav, RenderWav, Generator, euclid, MidiExport, UI,
-    STRINGS, TRACK_NAMES, t,
+    STRINGS, TRACK_NAMES, t, LEAD_KEYS,
   };
 `, ctx);
 const T = ctx.T;
@@ -501,6 +501,35 @@ const run = async () => {
     ctx.PG.state.steps = 16;
     seq.step = 6; seq.nextTime = 10 + 0.25;   // scheduler ran 2 steps ahead
     eq(seq.currentStep(10 + 0.05), 4, 'lookahead 2 steps -> audible is step-2');
+  });
+
+  await test('lead keys: cover C4..C5, sharps via +1, no drum overlap', () => {
+    const whites = Object.values(T.LEAD_KEYS);
+    ok(whites.includes(60) && whites.includes(72), 'range endpoints present');
+    for (const m of whites) ok(m >= 60 && m <= 72, 'in lead range');
+    // sharps = white + 1 for the five holders
+    const sharps = ['KeyQ', 'KeyW', 'KeyR', 'KeyT', 'KeyY'].map((k) => T.LEAD_KEYS[k] + 1).sort();
+    eq(sharps, [61, 63, 66, 68, 70], 'shift row covers the five black keys');
+    ok(!Object.keys(T.LEAD_KEYS).some((k) => k.startsWith('KeyA') || k.startsWith('KeyS') ||
+      k.startsWith('KeyD') || k.startsWith('KeyF') || k.startsWith('KeyG') ||
+      k.startsWith('KeyH') || k.startsWith('KeyJ') || k.startsWith('KeyK')), 'no drum-pad overlap');
+  });
+
+  await test('midi export: song reps expand the chain', async () => {
+    const p = T.emptyPattern();
+    p.tracks.kick[0] = 1;                                  // 1 note per bar
+    const st = T.defaultState();
+    st.patterns = [p, T.emptyPattern(), T.emptyPattern(), T.emptyPattern()];
+    st.song = { enabled: true, chain: [0, 0], reps: [2, 1] };   // A A A → 3 bars
+    const r = T.MidiExport.export(st);
+    eq(r.bars, 3, 'reps expand the chain');
+    eq(r.notes, 3, 'one kick per expanded bar');
+    // share codec carries reps
+    ctx.PG.state = st;
+    const back = T.UI.decodeShare(T.UI.encodeShare());
+    eq(back.song.reps, [2, 1], 'reps survive the link');
+    const legacy = T.UI.normalizeState({ song: { chain: [0, 1] } });
+    eq(legacy.song.reps, [1, 1], 'normalize backfills reps');
   });
 
   await test('offline render guard: clean error without OfflineAudioContext', async () => {

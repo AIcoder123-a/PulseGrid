@@ -21,6 +21,7 @@ class Sequencer {
     // from intensive throttling, but this covers every browser.
     this.lookahead = 0.12;
     this.songIndex = 0;       // current slot in the song chain
+    this._barsLeft = 0;       // repeats left in the current slot
     this._barsStarted = 0;
     this.onSongAdvance = null; // set by app.js
     document.addEventListener('visibilitychange', () => this._applyThrottle());
@@ -48,6 +49,7 @@ class Sequencer {
     const song = this.state.song;
     if (song && song.enabled && song.chain.length) {
       this.state.active = song.chain[0];
+      this._barsLeft = Math.max(0, ((song.reps || [])[0] || 1) - 1);
       if (this.onSongAdvance) this.onSongAdvance(0);
     }
     this._applyThrottle();
@@ -88,9 +90,11 @@ class Sequencer {
 
   _advanceSong() {
     const song = this.state.song;
-    if (!song || !song.enabled || song.chain.length < 2) return;
+    if (!song || !song.enabled || !song.chain.length) return;
+    if (this._barsLeft > 0) { this._barsLeft--; return; }   // repeat the current slot
     this.songIndex = (this.songIndex + 1) % song.chain.length;
     this.state.active = song.chain[this.songIndex];
+    this._barsLeft = Math.max(0, ((song.reps || [])[this.songIndex] || 1) - 1);
     if (this.onSongAdvance) this.onSongAdvance(this.songIndex);
   }
 

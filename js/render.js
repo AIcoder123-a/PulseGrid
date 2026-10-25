@@ -16,7 +16,12 @@ function hasContent(p) {
 function exportSequence(state, patternLoops = 2) {
   const song = state.song;
   if (song && song.enabled && song.chain.length) {
-    return { pats: song.chain.map((i) => state.patterns[i]), loops: 1 };
+    const reps = song.reps || [];
+    const pats = [];
+    song.chain.forEach((i, slot) => {
+      for (let r = 0; r < Math.max(1, reps[slot] || 1); r++) pats.push(state.patterns[i]);
+    });
+    return { pats, loops: 1 };
   }
   return { pats: state.patterns.filter(hasContent), loops: patternLoops };
 }
