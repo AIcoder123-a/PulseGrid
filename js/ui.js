@@ -430,6 +430,9 @@ const UI = {
     const btn = $('btnSongMode');
     btn.textContent = song.enabled ? t('songOn') : t('songOff');
     btn.classList.toggle('active', song.enabled);
+    $('songPos').textContent = PG.seq.isPlaying && song.enabled && song.chain.length
+      ? t('tBarPos', { cur: PG.seq.songIndex + 1, total: song.chain.length })
+      : '';
   },
 
   /* ================= beat generator ================= */
@@ -702,6 +705,7 @@ const UI = {
     $('btnStop').addEventListener('click', () => {
       PG.seq.stop();
       PG.viz.playing = false;
+      this.refreshSong();
       $('btnPlay').classList.remove('playing');
       $('btnPlay').innerHTML = '▶<span>Play</span>';
     });
@@ -790,6 +794,7 @@ const UI = {
     if (seq.isPlaying) {
       seq.stop();
       PG.viz.playing = false;
+      this.refreshSong();
       btn.classList.remove('playing');
       btn.innerHTML = '▶<span>' + t('play') + '</span>';
     } else {

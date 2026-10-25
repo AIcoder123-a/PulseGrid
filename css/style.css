@@ -18,6 +18,7 @@
 * { box-sizing: border-box; }
 
 html, body {
+  overscroll-behavior: none;   /* pull-to-refresh has no business in a drum machine */
   margin: 0;
   padding: 0;
   background:
@@ -354,6 +355,12 @@ h2 .hint { font-weight: 400; text-transform: none; letter-spacing: 0.2px; opacit
   border-color: transparent;
 }
 .song-empty { color: var(--muted); font-size: 12px; }
+.song-pos {
+  font: 12px var(--mono);
+  color: var(--muted);
+  min-width: 70px;
+}
+.song-pos:empty { min-width: 0; }
 
 /* ---------- sound design ---------- */
 
