@@ -21,11 +21,11 @@
         <circle cx="24" cy="16" r="3.6" fill="#f43f5e"/>
       </svg>
       <span class="brand-name">PulseGrid</span>
-      <span class="brand-tag">web audio drum machine</span>
+      <span class="brand-tag" data-i18n="tagline">web audio drum machine</span>
     </div>
 
     <div class="transport">
-      <button id="btnPlay" class="btn-play">▶<span>Play</span></button>
+      <button id="btnPlay" class="btn-play">▶<span data-i18n="play">Play</span></button>
       <button id="btnStop" class="btn-stop" title="Stop">■</button>
     </div>
 
@@ -36,35 +36,36 @@
     </div>
 
     <div class="ctrl">
-      <label for="swing">Swing</label>
+      <label for="swing"><span data-i18n="swing">Swing</span></label>
       <input type="range" id="swing" min="0" max="100" value="13">
       <output id="swingVal">13%</output>
     </div>
 
     <div class="ctrl">
-      <label for="masterVol">Master</label>
+      <label for="masterVol"><span data-i18n="master">Master</span></label>
       <input type="range" id="masterVol" min="0" max="100" value="85">
     </div>
 
     <div class="ctrl">
-      <label for="presetSel">Preset</label>
+      <label for="presetSel"><span data-i18n="preset">Preset</span></label>
       <select id="presetSel">
-        <option value="" selected>— load —</option>
+        <option value="" selected data-i18n="load">— load —</option>
       </select>
     </div>
 
     <div class="ctrl patterns" id="patternBtns"></div>
 
     <div class="ctrl actions">
+      <button id="btnLang" class="mini" title="Language / 语言">🌐 <span data-i18n="langBtn">中文</span></button>
       <button id="btnUndo" class="mini" title="Undo (Ctrl+Z)">↶</button>
       <button id="btnRedo" class="mini" title="Redo (Ctrl+Y)">↷</button>
-      <button id="btnCopy" class="mini" title="Copy active pattern to the next slot">Copy→</button>
-      <button id="btnClear" class="mini">Clear</button>
+      <button id="btnCopy" class="mini" title="Copy active pattern to the next slot" data-i18n="copy">Copy→</button>
+      <button id="btnClear" class="mini" data-i18n="clear">Clear</button>
       <button id="btnWav" class="mini" title="Render patterns to a .wav file (offline, faster than real time)">WAV</button>
-      <button id="btnMidi" class="mini" title="Export a standard MIDI file (drums on ch10, bass on ch1)">MIDI</button>
-      <button id="btnShare" class="mini" title="Copy a link that encodes this whole project state">Share</button>
-      <button id="btnExport" class="mini">Export</button>
-      <button id="btnImport" class="mini">Import</button>
+      <button id="btnMidi" class="mini" title="Export a standard MIDI file (drums ch10, bass ch1, lead ch2)">MIDI</button>
+      <button id="btnShare" class="mini" title="Copy a link that encodes this whole project state" data-i18n="share">Share</button>
+      <button id="btnExport" class="mini" data-i18n="export">Export</button>
+      <button id="btnImport" class="mini" data-i18n="import">Import</button>
       <input type="file" id="fileImport" accept="application/json" hidden>
     </div>
   </header>
@@ -75,79 +76,79 @@
 
   <main>
     <section class="panel gen">
-      <h2>Beat Generator <span class="hint">— one click, a fresh groove (A = main · B = variation)</span></h2>
+      <h2><span data-i18n="genTitle">Beat Generator</span> <span class="hint" data-i18n="genHint">— one click, a fresh groove (A = main · B = variation)</span></h2>
       <div class="gen-row">
         <select id="genStyle" title="Generator style"></select>
-        <label>Density <input type="range" id="genDensity" min="0" max="100" value="55"></label>
-        <button id="btnGenerate" class="btn-gen">🎲 Generate</button>
-        <button id="btnMutate" class="mini">🧬 Mutate</button>
-        <button id="btnEuc" class="mini" title="Fill a random percussion lane with a rotated euclidean rhythm E(k,16)">◎ Euc</button>
+        <label><span data-i18n="density">Density</span> <input type="range" id="genDensity" min="0" max="100" value="55"></label>
+        <button id="btnGenerate" class="btn-gen" data-i18n="generate">🎲 Generate</button>
+        <button id="btnMutate" class="mini" data-i18n="mutate">🧬 Mutate</button>
+        <button id="btnEuc" class="mini" title="Fill a random percussion lane with a rotated euclidean rhythm E(k,16)" data-i18n="euc">◎ Euc</button>
       </div>
     </section>
 
     <section class="panel song">
-      <h2>Arrangement <span class="hint">— song mode chains patterns bar by bar · click a slot to cycle A→B→C→D→remove</span></h2>
+      <h2><span data-i18n="songTitle">Arrangement</span> <span class="hint" data-i18n="songHint">— song mode chains patterns bar by bar · click a slot to cycle A→B→C→D→remove</span></h2>
       <div class="song-row">
         <button id="btnSongMode" class="mini">Song: OFF</button>
-        <button id="btnSongAdd" class="mini" title="Append a bar playing the active pattern">+ Bar</button>
-        <button id="btnSongClear" class="mini">Reset</button>
+        <button id="btnSongAdd" class="mini" title="Append a bar playing the active pattern" data-i18n="addBar">+ Bar</button>
+        <button id="btnSongClear" class="mini" data-i18n="songReset">Reset</button>
         <div id="songChain" class="song-chain"></div>
       </div>
     </section>
 
     <section class="panel">
-      <h2>Drums <span class="hint">— drag to paint · double-click = accent · right-click = clear accent</span></h2>
+      <h2><span data-i18n="drumsTitle">Drums</span> <span class="hint" data-i18n="drumsHint">— drag to paint · double-click = accent · right-click = clear accent</span></h2>
       <div id="tracks"></div>
     </section>
 
     <section class="panel sound">
-      <h2>Sound Design <span class="hint">— per-drum tune & decay · applies to live playback, WAV and share links</span></h2>
+      <h2><span data-i18n="soundTitle">Sound Design</span> <span class="hint" data-i18n="soundHint">— per-drum tune &amp; decay · applies to live playback, WAV and share links</span></h2>
       <div class="sound-row">
         <div id="soundChips" class="sound-chips"></div>
         <div class="sound-ctrl">
-          <label>Tune <output id="sndTuneVal">×1.00</output></label>
+          <label><span data-i18n="tune">Tune</span> <output id="sndTuneVal">×1.00</output></label>
           <input type="range" id="sndTune" min="50" max="200" value="100">
         </div>
         <div class="sound-ctrl">
-          <label>Decay <output id="sndDecayVal">×1.00</output></label>
+          <label><span data-i18n="decay">Decay</span> <output id="sndDecayVal">×1.00</output></label>
           <input type="range" id="sndDecay" min="40" max="250" value="100">
         </div>
-        <button id="sndPreview" class="mini">► Hear</button>
-        <button id="sndReset" class="mini">Reset</button>
+        <button id="sndPreview" class="mini" data-i18n="hear">► Hear</button>
+        <button id="sndReset" class="mini" data-i18n="reset">Reset</button>
       </div>
     </section>
 
     <section class="panel">
-      <h2>Bass Synth <span class="hint">— click: note → accent → off · one note per step</span></h2>
+      <h2><span data-i18n="bassTitle">Bass Synth</span> <span class="hint" data-i18n="bassHint">— click: note → accent → off · one note per step</span></h2>
       <div id="roll"></div>
     </section>
 
     <section class="panel">
-      <h2>Lead Synth <span class="hint">— detuned saws + vibrato · C4–C5 melody lane</span></h2>
+      <h2><span data-i18n="leadTitle">Lead Synth</span> <span class="hint" data-i18n="leadHint">— detuned saws + vibrato · C4–C5 melody lane</span></h2>
       <div id="leadroll"></div>
     </section>
 
     <section class="panel fx">
-      <h2>Master FX <span class="hint">— delay is tempo-synced (dotted 8th)</span></h2>
+      <h2><span data-i18n="fxTitle">Master FX</span> <span class="hint" data-i18n="fxHint">— delay is tempo-synced (dotted 8th)</span></h2>
       <div class="fx-rack">
         <div class="fx-unit">
-          <label>Delay <output id="delayVal">20%</output></label>
+          <label><span data-i18n="delay">Delay</span> <output id="delayVal">20%</output></label>
           <input type="range" id="fxDelay" min="0" max="100" value="20">
         </div>
         <div class="fx-unit">
-          <label>Reverb <output id="reverbVal">16%</output></label>
+          <label><span data-i18n="reverb">Reverb</span> <output id="reverbVal">16%</output></label>
           <input type="range" id="fxReverb" min="0" max="100" value="16">
         </div>
         <div class="fx-unit">
-          <label>Filter <output id="filterVal">16.0 kHz</output></label>
+          <label><span data-i18n="filter">Filter</span> <output id="filterVal">16.0 kHz</output></label>
           <input type="range" id="fxFilter" min="0" max="100" value="98">
         </div>
         <div class="fx-unit">
-          <label>Pump <output id="pumpVal">0%</output></label>
+          <label><span data-i18n="pump">Pump</span> <output id="pumpVal">0%</output></label>
           <input type="range" id="fxPump" min="0" max="100" value="0" title="Sidechain: bass & lead duck under the kick">
         </div>
         <div class="fx-unit">
-          <label>Humanize <output id="humanizeVal">0%</output></label>
+          <label><span data-i18n="humanize">Humanize</span> <output id="humanizeVal">0%</output></label>
           <input type="range" id="fxHumanize" min="0" max="100" value="0" title="Micro timing / velocity jitter">
         </div>
       </div>
@@ -155,10 +156,10 @@
   </main>
 
   <footer>
-    <span><kbd>Space</kbd> play / stop</span>
-    <span><kbd>1</kbd>–<kbd>4</kbd> switch pattern</span>
-    <span><kbd>A</kbd>–<kbd>K</kbd> drum pads</span>
-    <span><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Y</kbd> undo / redo</span>
+    <span><kbd>Space</kbd> <span data-i18n="footSpace">play / stop</span></span>
+    <span><kbd>1</kbd>–<kbd>4</kbd> <span data-i18n="footPat">switch pattern</span></span>
+    <span><kbd>A</kbd>–<kbd>K</kbd> <span data-i18n="footPads">drum pads</span></span>
+    <span><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Y</kbd> <span data-i18n="footUndo">undo / redo</span></span>
     <span><a href="https://github.com/AIcoder123-a/PulseGrid" target="_blank" rel="noopener">PulseGrid</a> · pure Web Audio · no samples · MIT</span>
   </footer>
 
@@ -171,6 +172,7 @@
   <script src="js/render.js"></script>
   <script src="js/midi.js"></script>
   <script src="js/generator.js"></script>
+  <script src="js/i18n.js"></script>
   <script src="js/ui.js"></script>
   <script src="js/app.js"></script>
   <script>

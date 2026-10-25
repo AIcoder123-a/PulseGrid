@@ -50,7 +50,7 @@ const sandbox = {
 const ctx = vm.createContext(sandbox);
 const SRC = path.join(__dirname, '..', 'js');
 for (const f of ['audio-engine.js', 'presets.js', 'sequencer.js', 'visualizer.js',
-                 'render.js', 'midi.js', 'generator.js', 'ui.js']) {
+                 'render.js', 'midi.js', 'generator.js', 'i18n.js', 'ui.js']) {
   vm.runInContext(fs.readFileSync(path.join(SRC, f), 'utf8'), ctx, { filename: f });
 }
 
@@ -61,6 +61,7 @@ vm.runInContext(`
   globalThis.T = {
     STEPS, TRACKS, PRESETS, P, B, defaultState, emptyPattern, clonePattern,
     makeSoftClipCurve, encodeWav, RenderWav, Generator, euclid, MidiExport, UI,
+    STRINGS, TRACK_NAMES, t,
   };
 `, ctx);
 const T = ctx.T;
@@ -412,6 +413,26 @@ const run = async () => {
     eq(str(new Uint8Array(blob.parts[0]), 36, 4), 'data');
     eq(dv.getUint32(40, true), N * 4, 'data size');
     eq(dv.getInt16(44, true), Math.floor(0.5 * 0x7fff), 'first sample = +0.5 full scale');
+  });
+
+  await test('i18n: en/zh key parity and sane values', () => {
+    const en = Object.keys(T.STRINGS.en).sort();
+    const zh = Object.keys(T.STRINGS.zh).sort();
+    eq(en, zh, 'every key exists in both languages');
+    const enT = Object.keys(T.TRACK_NAMES.en).sort();
+    const zhT = Object.keys(T.TRACK_NAMES.zh).sort();
+    eq(enT, zhT, 'every track has a name in both languages');
+    for (const k of en) {
+      ok(typeof T.STRINGS.en[k] === 'string' && T.STRINGS.en[k].length > 0, `en.${k} non-empty`);
+      ok(typeof T.STRINGS.zh[k] === 'string' && T.STRINGS.zh[k].length > 0, `zh.${k} non-empty`);
+    }
+    ok(T.t('tSure') === 'Sure?', 't() reads the default language');
+    ok(T.STRINGS.zh.tSure.includes('确定'), 'zh clear-confirm present');
+    // placeholder params match across languages
+    for (const k of en) {
+      const ph = (str) => (str.match(/\{[a-z]+\}/g) || []).sort().join(',');
+      eq(ph(T.STRINGS.en[k]), ph(T.STRINGS.zh[k]), `placeholder parity for ${k}`);
+    }
   });
 
   await test('offline render guard: clean error without OfflineAudioContext', async () => {

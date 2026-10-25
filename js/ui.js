@@ -80,7 +80,7 @@ const UI = {
       `<button class="mini mute" title="Mute lead">M</button>` +
       `<button class="mini solo" title="Solo lead">S</button>` +
       `<button class="mini chord" title="Chord mode: clicks place minor triads">♪</button>` +
-      `<span class="dot"></span><span class="lane-name">Lead</span>` +
+      `<span class="dot"></span><span class="lane-name" data-track="lead">${trackName('lead')}</span>` +
       `<input type="range" class="lane-vol" min="0" max="100" title="Lead volume">` +
       `</div><div class="lane-grid"></div>`;
 
@@ -111,7 +111,7 @@ const UI = {
     chordBtn.addEventListener('click', () => {
       this.chordMode = !this.chordMode;
       chordBtn.classList.toggle('active', this.chordMode);
-      this.toast(this.chordMode ? 'Chord mode ON — clicks place minor triads' : 'Chord mode off');
+      this.toast(this.chordMode ? t('tChordOn') : t('tChordOff'));
     });
     host.appendChild(bar);
 
@@ -200,25 +200,25 @@ const UI = {
   },
 
   undo() {
-    if (!this.undoStack || !this.undoStack.length) { this.toast('Nothing to undo'); return; }
+    if (!this.undoStack || !this.undoStack.length) { this.toast(t('tNothingUndo')); return; }
     this.redoStack.push(this.snapshot());
     PG.state = this.normalizeState(JSON.parse(this.undoStack.pop()));
     this._lastPushAt = 0;
     this.refreshAll();
     this.applyEngineParams();
     PG.markDirty();
-    this.toast('Undo');
+    this.toast(t('tUndo'));
   },
 
   redo() {
-    if (!this.redoStack || !this.redoStack.length) { this.toast('Nothing to redo'); return; }
+    if (!this.redoStack || !this.redoStack.length) { this.toast(t('tNothingRedo')); return; }
     this.undoStack.push(this.snapshot());
     PG.state = this.normalizeState(JSON.parse(this.redoStack.pop()));
     this._lastPushAt = 0;
     this.refreshAll();
     this.applyEngineParams();
     PG.markDirty();
-    this.toast('Redo');
+    this.toast(t('tRedo'));
   },
 
   /* ================= song mode ================= */
@@ -236,7 +236,7 @@ const UI = {
       }
       this.refreshSong();
       PG.markDirty();
-      this.toast(song.enabled ? 'Song mode on — the chain plays in order' : 'Song mode off');
+      this.toast(song.enabled ? t('tSongOn') : t('tSongOff'));
     });
     $('btnSongAdd').addEventListener('click', () => {
       const song = PG.state.song;
@@ -277,11 +277,11 @@ const UI = {
     if (!song.chain.length) {
       const empty = document.createElement('span');
       empty.className = 'song-empty';
-      empty.textContent = 'empty — hit “+ Bar”';
+      empty.textContent = t('songEmpty');
       host.appendChild(empty);
     }
     const btn = $('btnSongMode');
-    btn.textContent = song.enabled ? 'Song: ON' : 'Song: OFF';
+    btn.textContent = song.enabled ? t('songOn') : t('songOff');
     btn.classList.toggle('active', song.enabled);
   },
 
@@ -313,7 +313,7 @@ const UI = {
       this.applyEngineParams();
       PG.markDirty();
       const opt = sel.options[sel.selectedIndex];
-      this.toast(`New ${opt ? opt.text : 'generated'} groove — A main / B variation`);
+      this.toast(t('tNewGroove', { style: opt ? opt.text : '🎲' }));
     });
     $('btnMutate').addEventListener('click', () => {
       this.pushUndo();
@@ -321,7 +321,7 @@ const UI = {
       PG.state.patterns[i] = Generator.mutate(PG.state.patterns[i]);
       this.refreshGrid();
       PG.markDirty();
-      this.toast(`Pattern ${['A', 'B', 'C', 'D'][i]} mutated`);
+      this.toast(t('tMutated', { p: ['A', 'B', 'C', 'D'][i] }));
     });
 
     $('btnEuc').addEventListener('click', () => {
@@ -330,8 +330,7 @@ const UI = {
       PG.state.patterns[PG.state.active].tracks[trackId] = lane;
       this.refreshGrid();
       PG.markDirty();
-      const names = { chat: 'Hi-Hat', ohat: 'Open Hat', tom: 'Tom', cowbell: 'Cowbell', shaker: 'Shaker' };
-      this.toast(`Euclid E(${k},16) r${rotate} → ${names[trackId]}`);
+      this.toast(t('tEuc', { k, r: rotate, track: trackName(trackId) }));
       if (!PG.seq.isPlaying) PG.engine.preview(trackId);
     });
   },
@@ -348,7 +347,7 @@ const UI = {
       ctl.innerHTML =
         `<button class="mini mute" title="Mute">M</button>` +
         `<button class="mini solo" title="Solo">S</button>` +
-        `<span class="dot"></span><span class="lane-name">${cfg.name}</span>` +
+        `<span class="dot"></span><span class="lane-name" data-track="${cfg.id}">${trackName(cfg.id)}</span>` +
         `<input type="range" class="lane-vol" min="0" max="100" title="Volume">`;
 
       const mute = ctl.querySelector('.mute');
@@ -428,7 +427,7 @@ const UI = {
       `<div class="lane-ctl">` +
       `<button class="mini mute" title="Mute bass">M</button>` +
       `<button class="mini solo" title="Solo bass">S</button>` +
-      `<span class="dot"></span><span class="lane-name">Bass</span>` +
+      `<span class="dot"></span><span class="lane-name" data-track="bass">${trackName('bass')}</span>` +
       `<input type="range" class="lane-vol" min="0" max="100" title="Bass volume">` +
       `</div><div class="lane-grid"></div>`;
 
@@ -531,7 +530,7 @@ const UI = {
     this.refreshFX();
     this.applyEngineParams();
     PG.markDirty();
-    this.toast(`Loaded preset: ${p.name} — hit Play ▶`);
+    this.toast(t('tPreset', { name: p.name }));
   },
 
   /* ================= transport ================= */
@@ -591,31 +590,31 @@ const UI = {
       this.refreshPatternButtons();
       this.refreshGrid();
       PG.markDirty();
-      this.toast(`Copied to pattern ${['A', 'B', 'C', 'D'][next]}`);
+      this.toast(t('tCopied', { p: ['A', 'B', 'C', 'D'][next] }));
     });
 
     $('btnClear').addEventListener('click', () => {
       const btn = $('btnClear');
       if (!this._clearArmed) {
         this._clearArmed = true;
-        btn.textContent = 'Sure?';
+        btn.textContent = t('tSure');
         btn.classList.add('armed');
         this._clearTimer = setTimeout(() => {
           this._clearArmed = false;
-          btn.textContent = 'Clear';
+          btn.textContent = t('clear');
           btn.classList.remove('armed');
         }, 2000);
         return;
       }
       clearTimeout(this._clearTimer);
       this._clearArmed = false;
-      btn.textContent = 'Clear';
+      btn.textContent = t('clear');
       btn.classList.remove('armed');
       this.pushUndo();
       PG.state.patterns[PG.state.active] = emptyPattern();
       this.refreshGrid();
       PG.markDirty();
-      this.toast('Pattern cleared');
+      this.toast(t('tCleared'));
     });
   },
 
@@ -626,7 +625,7 @@ const UI = {
       seq.stop();
       PG.viz.playing = false;
       btn.classList.remove('playing');
-      btn.innerHTML = '▶<span>Play</span>';
+      btn.innerHTML = '▶<span>' + t('play') + '</span>';
     } else {
       PG.engine.ensure();
       this.applyEngineParams();
@@ -634,7 +633,7 @@ const UI = {
       PG.viz.playing = true;
       PG.viz.attach(PG.engine.analyser);
       btn.classList.add('playing');
-      btn.innerHTML = '❚❚<span>Stop</span>';
+      btn.innerHTML = '❚❚<span>' + t('stop') + '</span>';
     }
   },
 
@@ -782,10 +781,10 @@ const UI = {
       const url = location.href.split('#')[0] + '#p=' + this.encodeShare();
       try {
         await navigator.clipboard.writeText(url);
-        this.toast('Share link copied to clipboard');
+        this.toast(t('tShareCopied'));
       } catch (e) {
         location.hash = 'p=' + this.encodeShare();
-        this.toast('Share link is in the address bar — copy it there');
+        this.toast(t('tShareBar'));
       }
     });
 
@@ -797,9 +796,9 @@ const UI = {
         a.download = r.name;
         a.click();
         URL.revokeObjectURL(a.href);
-        this.toast(`Exported MIDI · ${r.bars} bars · ${r.notes} notes (drums ch10 / bass ch1)`);
+        this.toast(t('tMidi', { bars: r.bars, notes: r.notes }));
       } catch (e) {
-        this.toast('Nothing to export — all patterns are empty');
+        this.toast(t('tNothingExport'));
       }
     });
 
@@ -814,9 +813,9 @@ const UI = {
         a.download = 'pulsegrid-loop.wav';
         a.click();
         URL.revokeObjectURL(a.href);
-        this.toast(`Exported ${r.seconds.toFixed(1)}s WAV · ${r.bars} bars · ${(r.bytes / 1048576).toFixed(1)} MB`);
+        this.toast(t('tWav', { s: r.seconds.toFixed(1), bars: r.bars, mb: (r.bytes / 1048576).toFixed(1) }));
       } catch (e) {
-        this.toast('Nothing to export — all patterns are empty');
+        this.toast(t('tNothingExport'));
       }
       btn.disabled = false;
       btn.textContent = 'WAV';
@@ -833,7 +832,8 @@ const UI = {
       chip.className = 'sound-chip';
       chip.dataset.id = cfg.id;
       chip.style.setProperty('--c', cfg.color);
-      chip.textContent = cfg.name;
+      chip.textContent = trackName(cfg.id);
+      chip.setAttribute('data-track', cfg.id);
       chip.addEventListener('click', () => {
         this.soundSel = cfg.id;
         this.refreshSoundPanel();
@@ -906,9 +906,9 @@ const UI = {
           this.refreshAll();
           this.applyEngineParams();
           PG.markDirty();
-          this.toast('Pattern imported');
+          this.toast(t('tImported'));
         } catch (err) {
-          this.toast('Import failed: not a PulseGrid file');
+          this.toast(t('tImportFail'));
         }
       };
       reader.readAsText(file);
@@ -1168,6 +1168,11 @@ const UI = {
 
     $('btnUndo').addEventListener('click', () => this.undo());
     $('btnRedo').addEventListener('click', () => this.redo());
+    $('btnLang').addEventListener('click', () => {
+      setLang(LANG === 'en' ? 'zh' : 'en');
+      this.refreshSong();                     // dynamic Song ON/OFF label
+      if (!this._clearArmed) $('btnClear').textContent = t('clear');
+    });
   },
 
   toast(msg) {

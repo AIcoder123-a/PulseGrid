@@ -48,6 +48,13 @@ window.PG = {};
     window.addEventListener('beforeunload', saveNow);
     document.addEventListener('visibilitychange', () => { if (document.hidden) saveNow(); });
 
+    let lang = 'en';
+    try {
+      lang = localStorage.getItem('pulsegrid-lang') ||
+        ((navigator.language || 'en').toLowerCase().startsWith('zh') ? 'zh' : 'en');
+    } catch (e) {}
+    setLang(lang, false);
+
     UI.build();
     UI.refreshAll();
     PG.markDirty();
@@ -57,7 +64,7 @@ window.PG = {};
       UI.refreshGrid();
       UI.refreshSong();
     };
-    if (shared && state) UI.toast('Loaded shared pattern — hit Play ▶');
+    if (shared && state) UI.toast(t('tShared'));
   }
 
   if (document.readyState === 'loading') {
