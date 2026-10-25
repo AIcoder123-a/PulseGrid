@@ -238,7 +238,7 @@ function mutatePattern(src, rng, amount = 1) {
 
   for (const t of TRACKS) {
     const lane = p.tracks[t.id];
-    for (let s = 0; s < 16; s++) {
+    for (let s = 0; s < lane.length; s++) {
       const strong = s % 4 === 0;
       if (t.id === 'kick' && s === 0) continue;                 // keep the one
       if (lane[s] && ch(rng, 0.12 * amount)) lane[s] = 0;       // drop
@@ -256,7 +256,7 @@ function mutatePattern(src, rng, amount = 1) {
     const freshNote = () => isLead
       ? { notes: leadNotes(rng, 60, 0.3), accent: false }
       : { midi: noteNear(rng, root, 3, lo, hi), accent: false };
-    for (let s = 0; s < 16; s++) {
+    for (let s = 0; s < p.tracks[lane].length; s++) {
       const n = p.tracks[lane][s];
       if (!n) {
         if (ch(rng, 0.05 * amount)) p.tracks[lane][s] = freshNote();
@@ -274,28 +274,43 @@ function mutatePattern(src, rng, amount = 1) {
   return p;
 }
 
+/** Concatenate two same-length patterns into one double-length pattern. */
+function concatPatterns(a, b) {
+  const n = (a.tracks.kick || []).length + (b.tracks.kick || []).length;
+  const out = emptyPattern(n);
+  for (const k of Object.keys(out.tracks)) {
+    out.tracks[k] = [...(a.tracks[k] || []), ...(b.tracks[k] || [])];
+    while (out.tracks[k].length < n) out.tracks[k].push(k === 'bass' || k === 'lead' ? null : 0);
+  }
+  return out;
+}
+
 const Generator = {
   styles: GEN_STYLES,
-  /** density: 0..1 (scales event probabilities). seed optional for reproducible beats. */
-  generate(styleId, density, seed) {
+  /** density: 0..1 (scales event probabilities). seed optional for reproducible
+   *  beats. steps: 16 (default) or 32 — a 32 is two generated bars concatenated. */
+  generate(styleId, density, seed, steps = 16) {
     const style = GEN_STYLES.find((s) => s.id === styleId) || GEN_STYLES[0];
     const rng = mulberry32(seed == null ? (Math.random() * 0x7fffffff) | 0 : seed);
     const dg = 0.4 + density * 1.2;
-    return style.fn(rng, dg);
+    const first = style.fn(rng, dg);
+    if (steps !== 32) return first;
+    const second = style.fn(rng, dg);
+    return { pattern: concatPatterns(first.pattern, second.pattern), bpm: first.bpm, swing: first.swing, fx: first.fx };
   },
   mutate(pattern, seed, amount = 1) {
     const rng = mulberry32(seed == null ? (Math.random() * 0x7fffffff) | 0 : seed);
     return mutatePattern(pattern, rng, amount);
   },
 
-  /** Random euclidean fill for a percussion lane: E(k, 16) with rotation. */
-  euclidFill(seed) {
+  /** Random euclidean fill for a percussion lane: E(k, steps) with rotation. */
+  euclidFill(seed, steps = 16) {
     const rng = mulberry32(seed == null ? (Math.random() * 0x7fffffff) | 0 : seed);
     const targets = ['chat', 'ohat', 'tom', 'cowbell', 'shaker'];
     const trackId = pick(rng, targets);
-    const k = 3 + Math.floor(rng() * 5);            // 3..7 pulses
-    const rotate = Math.floor(rng() * 16);
-    const lane = euclid(k, 16, rotate).map((v, i) => (v ? (i % 4 === 0 ? 2 : 1) : 0));
+    const k = Math.max(3, Math.round(steps * (0.18 + rng() * 0.24)));
+    const rotate = Math.floor(rng() * steps);
+    const lane = euclid(k, steps, rotate).map((v, i) => (v ? (i % 4 === 0 ? 2 : 1) : 0));
     return { trackId, k, rotate, lane };
   },
 };

@@ -10,12 +10,24 @@
 
 'use strict';
 
-function emptyPattern() {
+function emptyPattern(n = STEPS) {
   const tracks = {};
-  for (const t of TRACKS) tracks[t.id] = new Array(STEPS).fill(0);  // 0 = off, 1 = hit, 2 = accent
-  tracks.bass = new Array(STEPS).fill(null);   // null | { midi, accent }
-  tracks.lead = new Array(STEPS).fill(null);   // null | { midi, accent }
+  for (const t of TRACKS) tracks[t.id] = new Array(n).fill(0);  // 0 = off, 1 = hit, 2 = accent
+  tracks.bass = new Array(n).fill(null);   // null | { midi, accent }
+  tracks.lead = new Array(n).fill(null);   // null | { notes: [midi...], accent }
   return { tracks };
+}
+
+/** Resize a pattern's lanes to `n` steps (pad with rests / truncate). */
+function resizePattern(p, n) {
+  const out = emptyPattern(n);
+  for (const k of Object.keys(out.tracks)) {
+    const lane = p.tracks[k] || [];
+    out.tracks[k] = lane.slice(0, n);
+    const pad = n - out.tracks[k].length;
+    for (let i = 0; i < pad; i++) out.tracks[k].push(k === 'bass' || k === 'lead' ? null : 0);
+  }
+  return out;
 }
 
 /** 'x...X...' → [0,1,0,0,2,...] ('X' = accented hit) */
@@ -229,6 +241,7 @@ function defaultState() {
                     emptyPattern(), emptyPattern()];
   return {
     version: 1,
+    steps: 16,
     bpm: preset.bpm,
     swing: preset.swing,
     masterVol: 0.85,

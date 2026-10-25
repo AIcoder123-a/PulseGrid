@@ -53,9 +53,7 @@ const UI = {
     this.undoStack = [];
     this.redoStack = [];
     this._lastPushAt = 0;
-    this.buildTracks();
-    this.buildRoll();
-    this.buildLeadRoll();
+    this.buildGrids();
     this.buildPatternButtons();
     this.buildPresets();
     this.buildSong();
@@ -127,7 +125,8 @@ const UI = {
       row.appendChild(label);
 
       this.leadCells[midi] = [];
-      for (let s = 0; s < STEPS; s++) {
+      const N = PG.state.steps || 16;
+      for (let s = 0; s < N; s++) {
         const cell = document.createElement('button');
         cell.className = 'roll-cell lead-cell beat-' + (Math.floor(s / 4) % 2);
         cell.dataset.s = s;
@@ -204,8 +203,7 @@ const UI = {
     this.redoStack.push(this.snapshot());
     PG.state = this.normalizeState(JSON.parse(this.undoStack.pop()));
     this._lastPushAt = 0;
-    this.refreshAll();
-    this.applyEngineParams();
+    this._restoreUi();
     PG.markDirty();
     this.toast(t('tUndo'));
   },
@@ -215,10 +213,48 @@ const UI = {
     this.undoStack.push(this.snapshot());
     PG.state = this.normalizeState(JSON.parse(this.redoStack.pop()));
     this._lastPushAt = 0;
+    this._restoreUi();
+    PG.markDirty();
+    this.toast(t('tRedo'));
+  },
+
+  /** Shared post-restore refresh: rebuild the grid when the step count differs. */
+  _restoreUi() {
+    const want32 = (PG.state.steps || 16) === 32;
+    if (want32 !== document.body.classList.contains('app-32')) {
+      this.buildGrids();
+    }
+    this.refreshAll();
+    this.applyEngineParams();
+  },
+
+  buildGrids() {
+    this.stepCells = {};
+    this.rollCells = {};
+    this.leadCells = {};
+    this.columns = [];
+    document.getElementById('tracks').innerHTML = '';
+    document.getElementById('roll').innerHTML = '';
+    document.getElementById('leadroll').innerHTML = '';
+    this.buildTracks();
+    this.buildRoll();
+    this.buildLeadRoll();
+    document.body.classList.toggle('app-32', (PG.state.steps || 16) === 32);
+  },
+
+  /* ================= pattern length (16 / 32) ================= */
+
+  setSteps(n) {
+    if ((PG.state.steps || 16) === n) return;
+    this.pushUndo();
+    PG.state.steps = n;
+    PG.state.patterns = PG.state.patterns.map((p) => resizePattern(p, n));
+    PG.state.song.chain = PG.state.song.chain.slice(0, 16);
+    this.buildGrids();
     this.refreshAll();
     this.applyEngineParams();
     PG.markDirty();
-    this.toast(t('tRedo'));
+    this.toast(n === 32 ? t('tLen32') : t('tLen16'));
   },
 
   /* ================= song mode ================= */
@@ -299,7 +335,7 @@ const UI = {
       this.pushUndo();
       const style = sel.value;
       const density = $('genDensity').value / 100;
-      const { pattern, bpm, swing, fx: fxParams } = Generator.generate(style, density);
+      const { pattern, bpm, swing, fx: fxParams } = Generator.generate(style, density, undefined, PG.state.steps || 16);
       PG.state.patterns[0] = pattern;
       PG.state.patterns[1] = Generator.mutate(pattern);
       PG.state.active = 0;
@@ -326,11 +362,12 @@ const UI = {
 
     $('btnEuc').addEventListener('click', () => {
       this.pushUndo();
-      const { trackId, k, rotate, lane } = Generator.euclidFill();
+      const steps = PG.state.steps || 16;
+      const { trackId, k, rotate, lane } = Generator.euclidFill(undefined, steps);
       PG.state.patterns[PG.state.active].tracks[trackId] = lane;
       this.refreshGrid();
       PG.markDirty();
-      this.toast(t('tEuc', { k, r: rotate, track: trackName(trackId) }));
+      this.toast(t('tEuc', { k: k + ',' + steps, r: rotate, track: trackName(trackId) }));
       if (!PG.seq.isPlaying) PG.engine.preview(trackId);
     });
   },
@@ -377,7 +414,8 @@ const UI = {
       const grid = document.createElement('div');
       grid.className = 'lane-grid';
       this.stepCells[cfg.id] = [];
-      for (let s = 0; s < STEPS; s++) {
+      const N = PG.state.steps || 16;
+      for (let s = 0; s < N; s++) {
         const cell = document.createElement('button');
         cell.className = 'step beat-' + (Math.floor(s / 4) % 2);
         cell.dataset.s = s;
@@ -467,7 +505,8 @@ const UI = {
       row.appendChild(label);
 
       this.rollCells[midi] = [];
-      for (let s = 0; s < STEPS; s++) {
+      const N = PG.state.steps || 16;
+      for (let s = 0; s < N; s++) {
         const cell = document.createElement('button');
         cell.className = 'roll-cell beat-' + (Math.floor(s / 4) % 2);
         cell.dataset.s = s;
@@ -521,8 +560,9 @@ const UI = {
     st.bpm = p.bpm;
     st.swing = p.swing;
     st.fx = { ...p.fx };
-    st.patterns = [clonePattern(p.patterns[0]), clonePattern(p.patterns[1]),
-                   emptyPattern(), emptyPattern()];
+    const n = st.steps || 16;
+    st.patterns = [resizePattern(clonePattern(p.patterns[0]), n), resizePattern(clonePattern(p.patterns[1]), n),
+                   emptyPattern(n), emptyPattern(n)];
     st.active = 0;
     this.refreshTransport();
     this.refreshPatternButtons();
@@ -701,6 +741,7 @@ const UI = {
       mv: +st.masterVol.toFixed(2),
       fx: [+st.fx.delay.toFixed(2), +st.fx.reverb.toFixed(2), Math.round(st.fx.filter),
            +(st.fx.pump || 0).toFixed(2), +(st.fx.humanize || 0).toFixed(2)],
+      n: st.steps === 32 ? 32 : undefined,
       ap: st.active,
       sc: st.song ? st.song.chain.slice(0, 16) : [0, 1],
       ts: (function () {   // non-default mix & sound design per track (drums + bass)
@@ -725,7 +766,10 @@ const UI = {
     while (b64.length % 4) b64 += '=';
     const d = JSON.parse(decodeURIComponent(escape(atob(b64))));
     const st = defaultState();
+    st.steps = d.n === 32 ? 32 : 16;
     st.bpm = d.bpm || st.bpm;
+    st.patterns = [emptyPattern(st.steps), emptyPattern(st.steps),
+                   emptyPattern(st.steps), emptyPattern(st.steps)];
     st.swing = typeof d.sw === 'number' ? d.sw : st.swing;
     st.masterVol = typeof d.mv === 'number' ? d.mv : st.masterVol;
     if (Array.isArray(d.fx)) {
@@ -756,20 +800,20 @@ const UI = {
     }
     for (const [i, src] of d.p) {
       if (i < 0 || i > 3) continue;
-      const p = emptyPattern();
+      const p = emptyPattern(st.steps);
       for (const t of TRACKS) {
         if (typeof src.d[t.id] === 'string') {
-          p.tracks[t.id] = [...src.d[t.id]].slice(0, STEPS).map((c) => (c === 'X' ? 2 : c === 'x' ? 1 : 0));
-          while (p.tracks[t.id].length < STEPS) p.tracks[t.id].push(0);
+          p.tracks[t.id] = [...src.d[t.id]].slice(0, st.steps).map((c) => (c === 'X' ? 2 : c === 'x' ? 1 : 0));
+          while (p.tracks[t.id].length < st.steps) p.tracks[t.id].push(0);
         }
       }
       if (typeof src.b === 'string') {
-        p.tracks.bass = src.b.split(',').slice(0, STEPS).map(parseNoteTok);
-        while (p.tracks.bass.length < STEPS) p.tracks.bass.push(null);
+        p.tracks.bass = src.b.split(',').slice(0, st.steps).map(parseNoteTok);
+        while (p.tracks.bass.length < st.steps) p.tracks.bass.push(null);
       }
       if (typeof src.l === 'string') {
-        p.tracks.lead = src.l.split(',').slice(0, STEPS).map(parseLeadTok);
-        while (p.tracks.lead.length < STEPS) p.tracks.lead.push(null);
+        p.tracks.lead = src.l.split(',').slice(0, st.steps).map(parseLeadTok);
+        while (p.tracks.lead.length < st.steps) p.tracks.lead.push(null);
       }
       st.patterns[i] = p;
     }
@@ -925,6 +969,7 @@ const UI = {
     // inheriting preset values that would change how old projects sound
     if (!data.fx || typeof data.fx.pump !== 'number') st.fx.pump = 0;
     if (!data.fx || typeof data.fx.humanize !== 'number') st.fx.humanize = 0;
+    st.steps = st.steps === 32 ? 32 : 16;
     st.trackState = st.trackState || {};
     for (const id of Object.keys(trackTemplate)) {
       const ts = st.trackState[id] || (st.trackState[id] = { ...trackTemplate[id] });
@@ -936,18 +981,18 @@ const UI = {
     }
     if (!Array.isArray(st.patterns)) st.patterns = [];
     st.patterns = st.patterns.slice(0, 4);
-    while (st.patterns.length < 4) st.patterns.push(emptyPattern());
+    while (st.patterns.length < 4) st.patterns.push(emptyPattern(st.steps));
     st.patterns = st.patterns.map((p) => {
-      const ep = emptyPattern();
+      const ep = emptyPattern(st.steps);
       const src = (p && typeof p === 'object' && p.tracks && typeof p.tracks === 'object') ? p.tracks : {};
       for (const k of Object.keys(ep.tracks)) {
         if (Array.isArray(src[k])) {
           // coerce legacy booleans, clamp values, enforce length
-          ep.tracks[k] = src[k].slice(0, STEPS).map((v) => {
+          ep.tracks[k] = src[k].slice(0, st.steps).map((v) => {
             if (k === 'lead') return sanitizeLead(v);
             return k === 'bass' ? v : (v === true ? 1 : v === false ? 0 : (v === 1 || v === 2 ? v : 0));
           });
-          while (ep.tracks[k].length < STEPS) ep.tracks[k].push(k === 'bass' || k === 'lead' ? null : 0);
+          while (ep.tracks[k].length < st.steps) ep.tracks[k].push(k === 'bass' || k === 'lead' ? null : 0);
         }
       }
       return ep;
@@ -1007,8 +1052,9 @@ const UI = {
 
   refreshGrid() {
     const p = PG.state.patterns[PG.state.active];
+    const N = PG.state.steps || 16;
     for (const cfg of TRACKS) {
-      for (let s = 0; s < STEPS; s++) {
+      for (let s = 0; s < N; s++) {
         const cell = this.stepCells[cfg.id][s];
         const v = p.tracks[cfg.id][s];
         cell.classList.toggle('on', !!v);
@@ -1017,11 +1063,11 @@ const UI = {
       }
     }
     for (let midi = BASS_MIDI_LO; midi <= BASS_MIDI_HI; midi++) {
-      for (let s = 0; s < STEPS; s++) {
+      for (let s = 0; s < N; s++) {
         this.refreshRollCell(midi, s, p.tracks.bass[s] && p.tracks.bass[s].midi === midi ? p.tracks.bass[s] : null);
       }
     }
-    for (let s = 0; s < STEPS; s++) this.refreshLeadCol(s);
+    for (let s = 0; s < N; s++) this.refreshLeadCol(s);
     // per-lane controls
     for (const cfg of TRACKS) {
       const lane = this.stepCells[cfg.id][0].closest('.lane');
@@ -1168,6 +1214,27 @@ const UI = {
 
     $('btnUndo').addEventListener('click', () => this.undo());
     $('btnRedo').addEventListener('click', () => this.redo());
+    $('btnLen').addEventListener('click', () => {
+      const btn = $('btnLen');
+      const growing = (PG.state.steps || 16) === 16;
+      if (!growing && !this._lenArmed) {
+        this._lenArmed = true;
+        btn.textContent = t('tSure');
+        btn.classList.add('armed');
+        this._lenTimer = setTimeout(() => {
+          this._lenArmed = false;
+          btn.textContent = '32';
+          btn.classList.remove('armed');
+        }, 2000);
+        return;
+      }
+      clearTimeout(this._lenTimer);
+      this._lenArmed = false;
+      btn.textContent = growing ? '32' : '16';
+      btn.classList.remove('armed');
+      this.setSteps(growing ? 32 : 16);
+    });
+
     $('btnLang').addEventListener('click', () => {
       setLang(LANG === 'en' ? 'zh' : 'en');
       this.refreshSong();                     // dynamic Song ON/OFF label

@@ -32,6 +32,7 @@ const MidiExport = {
     const { pats, loops } = exportSequence(state);
     if (!pats.length) throw new Error('nothing to export');
 
+    const len = state.steps || 16;   // steps per pattern
     const events = [];   // { tick, order, bytes }
     const push = (tick, order, bytes) => events.push({ tick, order, bytes });
 
@@ -43,7 +44,7 @@ const MidiExport = {
     let notes = 0;
     for (const p of pats) {
       for (let l = 0; l < loops; l++) {
-        for (let s = 0; s < STEPS; s++) {
+        for (let s = 0; s < len; s++) {
           const tick = barStart + s * TICK_16;
           for (const t of TRACKS) {
             const v = p.tracks[t.id][s];
@@ -71,7 +72,7 @@ const MidiExport = {
             }
           }
         }
-        barStart += STEPS * TICK_16;
+        barStart += len * TICK_16;
       }
     }
     push(barStart, 3, [0xff, 0x2f, 0x00]);                    // end of track

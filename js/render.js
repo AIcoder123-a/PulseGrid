@@ -64,10 +64,11 @@ const RenderWav = {
     const { pats, loops: barsLoops } = exportSequence(state, loops);
     if (!pats.length) throw new Error('nothing to render');
 
+    const len = state.steps || 16;   // steps per pattern
     const stepDur = 60 / state.bpm / 4;
     const bars = pats.length * barsLoops;
     const tail = 2.5; // let delay/reverb ring out
-    const total = bars * STEPS * stepDur + tail;
+    const total = pats.length * barsLoops * len * stepDur + tail;
 
     const off = new OfflineAudioContext(2, Math.ceil(total * sr), sr);
     const eng = new AudioEngine();
@@ -96,7 +97,7 @@ const RenderWav = {
     let t = 0.05;
     for (const p of pats) {
       for (let l = 0; l < barsLoops; l++) {
-        for (let s = 0; s < STEPS; s++) {
+        for (let s = 0; s < len; s++) {
           const sw = s % 2 === 1 ? state.swing * stepDur * 0.5 : 0;
           eng.scheduleStep(p, s, t + sw, stepDur);
           t += stepDur;

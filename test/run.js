@@ -435,6 +435,51 @@ const run = async () => {
     }
   });
 
+  await test('32-step patterns: generate, codec, normalize, euclid', () => {
+    // generator: 32 = two concatenated bars, invariants hold across both halves
+    const g = T.Generator.generate('house', 0.6, 77, 32);
+    eq(g.pattern.tracks.kick.length, 32, 'lanes are 32 long');
+    for (const t of T.TRACKS) ok(g.pattern.tracks[t.id].length === 32, `${t.id} length`);
+    ok(g.pattern.tracks.kick[0] !== 0 && g.pattern.tracks.kick[16] !== 0, 'both bar downbeats');
+    ok(validPattern32(g.pattern), 'structure valid at 32');
+
+    // codec roundtrip at 32
+    const st = T.defaultState();
+    st.steps = 32;
+    st.patterns = st.patterns.map((p) => T.emptyPattern ? p : p);   // keep 16-len; normalize will pad
+    ctx.PG.state = st;
+    const code = T.UI.encodeShare();
+    const back = T.UI.decodeShare(code);
+    ok(back.steps === 32, 'steps survive the link');
+    ok(back.patterns[0].tracks.kick.length === 32, 'decoded lanes are 32');
+    eq(back.patterns[0].tracks.kick.slice(0, 16), st.patterns[0].tracks.kick, 'first 16 preserved');
+
+    // legacy 16 link decodes at 16
+    const legacy = T.Generator.generate('techno', 0.6, 5);
+    const st2 = T.defaultState();
+    st2.patterns[0] = legacy.pattern;
+    ctx.PG.state = st2;
+    const back2 = T.UI.decodeShare(T.UI.encodeShare());
+    ok(back2.steps === 16 && back2.patterns[0].tracks.kick.length === 16, '16 stays 16');
+
+    // normalize pads to 32 and truncates to 16
+    const padded = T.UI.normalizeState({ steps: 32, patterns: [legacy.pattern, null, null, null] });
+    ok(padded.steps === 32 && padded.patterns[0].tracks.kick.length === 32, '16 content padded to 32');
+    ok(padded.patterns[0].tracks.kick[20] === 0, 'padded with rests');
+    const cut = T.UI.normalizeState({ steps: 16, patterns: [g.pattern, null, null, null] });
+    ok(cut.patterns[0].tracks.kick.length === 16, '32 content truncated to 16');
+
+    // euclid at 32
+    const e = T.Generator.euclidFill(9, 32);
+    ok(e.lane.length === 32, 'euclid lane matches length');
+    ok(e.lane.filter((v) => v > 0).length === e.k, 'pulses conserved at 32');
+
+    function validPattern32(p) {
+      return T.TRACKS.every((t) => p.tracks[t.id].length === 32) &&
+        p.tracks.bass.length === 32 && p.tracks.lead.length === 32;
+    }
+  });
+
   await test('offline render guard: clean error without OfflineAudioContext', async () => {
     let threw = null;
     try { await T.RenderWav.render(T.defaultState()); } catch (e) { threw = e.message; }

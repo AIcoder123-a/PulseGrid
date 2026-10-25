@@ -82,7 +82,7 @@ class Sequencer {
       if (this.drawQueue.length > 64) this.drawQueue.splice(0, this.drawQueue.length - 64);
 
       this.nextTime += stepDur;
-      this.step = (this.step + 1) % STEPS;
+      this.step = (this.step + 1) % (this.state.steps || 16);
     }
   }
 

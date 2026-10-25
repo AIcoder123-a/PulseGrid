@@ -241,6 +241,15 @@ h2 .hint { font-weight: 400; text-transform: none; letter-spacing: 0.2px; opacit
   box-shadow: 0 0 5px rgba(255, 255, 255, 0.9);
 }
 
+/* ---------- 32-step patterns ---------- */
+
+.app-32 .lane-grid { grid-template-columns: repeat(32, minmax(20px, 1fr)); }
+.app-32 .step[data-s="16"],
+.app-32 .roll-cell[data-s="16"] {
+  margin-left: 7px;
+  border-left: 2px solid #33415a;
+}
+
 /* ---------- generator ---------- */
 
 .gen-row { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 24px; padding: 2px; }
@@ -422,4 +431,7 @@ kbd {
   .fx-unit input[type="range"] { width: 100%; }
   .fx-rack { gap: 14px 22px; }
   footer { gap: 6px 16px; padding: 6px 10px 20px; }
+
+  /* 32-step grids scroll horizontally on phones instead of shrinking to dots */
+  .app-32 .lane-grid { min-width: 620px; }
 }
