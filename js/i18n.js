@@ -43,7 +43,7 @@ const STRINGS = {
     delay: 'Delay', reverb: 'Reverb', filter: 'Filter', pump: 'Pump', humanize: 'Humanize',
 
     footSpace: 'play / stop', footPat: 'switch pattern', footPads: 'drum pads',
-    footUndo: 'undo / redo',
+    footUndo: 'undo / redo', footClick: 'metronome',
 
     // dynamic
     tNewGroove: 'New {style} groove — A main / B variation',
@@ -121,7 +121,7 @@ const STRINGS = {
     delay: '延迟', reverb: '混响', filter: '滤波', pump: '泵动', humanize: '人性化',
 
     footSpace: '播放 / 停止', footPat: '切换 Pattern', footPads: '键盘打鼓',
-    footUndo: '撤销 / 重做',
+    footUndo: '撤销 / 重做', footClick: '节拍器',
 
     // dynamic
     tNewGroove: '新 {style} groove — A 主节奏 / B 变奏',

@@ -109,6 +109,7 @@ const RenderWav = {
         for (let s = 0; s < len; s++) {
           const sw = s % 2 === 1 ? state.swing * stepDur * 0.5 : 0;
           eng.scheduleStep(p, s, t + sw, stepDur);
+          if (state.click) eng.click(t + sw, s % 4 === 0);   // honor the metronome toggle, like live
           t += stepDur;
         }
       }

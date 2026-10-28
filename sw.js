@@ -7,7 +7,7 @@
 
 'use strict';
 
-const CACHE = 'pulsegrid-v26';
+const CACHE = 'pulsegrid-v27';
 
 const ASSETS = [
   './',
@@ -20,6 +20,7 @@ const ASSETS = [
   './js/render.js',
   './js/midi.js',
   './js/generator.js',
+  './js/i18n.js',
   './js/ui.js',
   './js/app.js',
   './manifest.webmanifest',

@@ -376,6 +376,14 @@ const UI = {
     this.toast(t('tRotated', { n: dir > 0 ? k : k ? n - k : 0 }));
   },
 
+  /** Toggle the metronome click (CNT). Shared by the button and the `M` key. */
+  toggleClick() {
+    PG.state.click = !PG.state.click;
+    $('btnClick').classList.toggle('active', PG.state.click);
+    PG.markDirty();
+    this.toast(PG.state.click ? t('tClickOn') : t('tClickOff'));
+  },
+
   toggleHelp(force) {
     const el = $('help');
     const show = force != null ? force : !el.classList.contains('open');
@@ -1501,6 +1509,8 @@ const UI = {
         this.rotatePattern(-1);
       } else if (e.code === 'Period') {
         this.rotatePattern(1);
+      } else if (e.code === 'KeyM') {
+        this.toggleClick();
       } else if (e.key === '?') {
         this.toggleHelp();
       } else if (e.key === 'Escape') {
@@ -1508,12 +1518,7 @@ const UI = {
       }
     });
 
-    $('btnClick').addEventListener('click', () => {
-      PG.state.click = !PG.state.click;
-      $('btnClick').classList.toggle('active', PG.state.click);
-      PG.markDirty();
-      this.toast(PG.state.click ? t('tClickOn') : t('tClickOff'));
-    });
+    $('btnClick').addEventListener('click', () => this.toggleClick());
 
     $('btnRec').addEventListener('click', () => {
       PG.state.rec = !PG.state.rec;
