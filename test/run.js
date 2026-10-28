@@ -50,7 +50,7 @@ const sandbox = {
 const ctx = vm.createContext(sandbox);
 const SRC = path.join(__dirname, '..', 'js');
 for (const f of ['audio-engine.js', 'presets.js', 'sequencer.js', 'visualizer.js',
-                 'render.js', 'midi.js', 'generator.js', 'i18n.js', 'ui.js']) {
+                 'render.js', 'midi.js', 'generator.js', 'vibe.js', 'i18n.js', 'ui.js']) {
   vm.runInContext(fs.readFileSync(path.join(SRC, f), 'utf8'), ctx, { filename: f });
 }
 
@@ -62,6 +62,7 @@ vm.runInContext(`
     STEPS, TRACKS, PRESETS, P, B, defaultState, emptyPattern, clonePattern,
     makeSoftClipCurve, encodeWav, RenderWav, Generator, euclid, MidiExport, UI,
     STRINGS, TRACK_NAMES, t, LEAD_KEYS, demoState, AudioEngine, MidiImport, rotated,
+    Vibe,
   };
 `, ctx);
 const T = ctx.T;
@@ -691,6 +692,67 @@ const run = async () => {
     let threw = null;
     try { await T.RenderWav.render(T.defaultState()); } catch (e) { threw = e.message; }
     ok(/OfflineAudioContext/.test(threw || ''), `expected unsupported-context error, got: ${threw}`);
+  });
+
+  /* ---------- vibe prompt engine ---------- */
+
+  await test('vibe: same prompt is deterministic (seed, pattern, bpm, style)', () => {
+    const a = T.Vibe.generate('cyberpunk boss fight');
+    const b = T.Vibe.generate('cyberpunk boss fight');
+    eq(a.cfg.seed, b.cfg.seed, 'same prompt -> same seed');
+    eq(a.pattern, b.pattern, 'same pattern');
+    eq(a.bpm, b.bpm, 'same bpm');
+    eq(a.cfg.style, b.cfg.style, 'same style');
+  });
+
+  await test('vibe: explicit seed pins the beat regardless of prompt text', () => {
+    const a = T.Vibe.generate('anything at all', { seed: 12345 });
+    const b = T.Vibe.generate('something completely different', { seed: 12345 });
+    eq(a.cfg.seed, 12345, 'seed honored');
+    eq(a.pattern, b.pattern, 'seed reproduces the beat');
+  });
+
+  await test('vibe: output is always a structurally valid, in-range song', () => {
+    const prompts = [
+      '90s underground acid warehouse rave',
+      'midnight lo-fi study in tokyo, raining',
+      'fast energetic dnb chase through neon city',
+      'reggaeton summer beach party',
+      'afrobeat village groove',
+      '赛博朋克 Boss 战',
+      '下雨的洛菲咖啡馆',
+    ];
+    for (const p of prompts) {
+      const r = T.Vibe.generate(p, { seed: 7 });
+      ok(validPattern(r.pattern), `${p}: valid 16-lane pattern`);
+      ok(r.bpm >= 60 && r.bpm <= 200, `${p}: bpm in [60,200]`);
+      ok(r.swing >= 0 && r.swing <= 0.4, `${p}: swing within generator range`);
+      ok(r.fx.filter >= 20 && r.fx.filter <= 18000, `${p}: filter Hz in range`);
+      ok(r.fx.reverb >= 0 && r.fx.reverb <= 1, `${p}: reverb 0..1`);
+      ok(r.fx.pump >= 0 && r.fx.pump <= 1, `${p}: pump 0..1`);
+      ok(r.cfg.density >= 0 && r.cfg.density <= 1, `${p}: density 0..1`);
+    }
+  });
+
+  await test('vibe: genre + mood heuristics map as intended', () => {
+    eq(T.Vibe.generate('90s underground acid warehouse rave', { seed: 1 }).cfg.style, 'techno', 'acid/warehouse -> techno');
+    const lo = T.Vibe.generate('midnight lo-fi study in tokyo, raining', { seed: 1 }).cfg;
+    eq(lo.style, 'lofi', 'lofi token -> lofi');
+    ok(lo.mood === 'dark' || lo.filterHz < 9000, 'rainy/dark -> dark mood or low cut-off');
+    eq(T.Vibe.generate('fast energetic dnb chase through neon', { seed: 1 }).cfg.style, 'dnb', 'dnb token -> dnb');
+    eq(T.Vibe.generate('reggaeton latin beach party', { seed: 1 }).cfg.style, 'reggaeton', 'reggaeton token');
+    const zh = T.Vibe.generate('赛博朋克 霓虹 战斗', { seed: 1 }).cfg;
+    ok(zh.style === 'techno', 'Chinese cyberpunk -> techno');
+  });
+
+  await test('vibe: explicit BPM in the prompt is honored', () => {
+    eq(T.Vibe.generate('techno at 140 bpm', { seed: 3 }).bpm, 140, 'parsed bpm wins');
+  });
+
+  await test('vibe: empty / unknown prompt still yields a valid song', () => {
+    const r = T.Vibe.generate('', { seed: 9 });
+    ok(validPattern(r.pattern), 'empty prompt -> valid pattern');
+    ok(['house', 'techno', 'lofi', 'dnb', 'afro', 'surprise'].includes(r.cfg.style), 'falls back to a known style');
   });
 
   /* ---------- summary ---------- */

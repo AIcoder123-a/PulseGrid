@@ -80,12 +80,14 @@ const UI = {
     this.buildPresets();
     this.buildSong();
     this.buildGenerator();
+    this.buildVibe();
     this.buildSoundPanel();
     this.bindTransport();
     this.bindFX();
     this.bindImportExport();
     this.bindExportTools();
     this.bindKeys();
+    this.buildVisualizer();
     requestAnimationFrame(() => this._tick());
   },
 
@@ -559,6 +561,84 @@ const UI = {
       this.toast(t('tEuc', { k: k + ',' + steps, r: rotate, track: trackName(trackId) }));
       if (!PG.seq.isPlaying) PG.engine.preview(trackId);
     });
+  },
+
+  /* ================= vibe prompt generator ================= */
+
+  buildVibe() {
+    const input = $('vibePrompt');
+    const status = $('vibeStatus');
+    if (!input) return;
+    const run = () => {
+      this.pushUndo();
+      const prompt = (input.value || '').trim() || 'surprise groove';
+      const steps = PG.state.steps || 16;
+      const res = Vibe.generate(prompt, { steps });
+      PG.state.patterns[0] = res.pattern;
+      PG.state.patterns[1] = Generator.mutate(res.pattern);
+      PG.state.active = 0;
+      PG.state.bpm = res.bpm;
+      PG.state.swing = res.swing;
+      PG.state.fx.filter = res.fx.filter;
+      PG.state.fx.reverb = res.fx.reverb;
+      PG.state.fx.pump = res.fx.pump;
+      PG.state.fx.humanize = res.fx.humanize;
+      if (res.cfg.sound && res.cfg.sound.kick) {
+        PG.state.trackState.kick.tune = res.cfg.sound.kick.tune;
+        PG.state.trackState.kick.decay = res.cfg.sound.kick.decay;
+      }
+      this.refreshAll();
+      this.refreshFX();
+      this.refreshSoundPanel();
+      this.applyEngineParams();
+      PG.markDirty();
+      const genre = (Generator.styles.find((s) => s.id === res.cfg.style) || {}).name || res.cfg.style;
+      const moodKey = 'vibeMood' + res.cfg.mood.charAt(0).toUpperCase() + res.cfg.mood.slice(1);
+      const mood = t(moodKey);
+      status.textContent = '✨ ' + res.bpm + ' BPM · ' + genre + ' · ' + mood +
+        (res.cfg.tags.length ? ' · ' + res.cfg.tags.join('/') : '');
+      status.classList.add('show');
+      this.toast(t('tVibe', { bpm: res.bpm, style: genre, mood: mood }));
+    };
+    $('btnVibe').addEventListener('click', run);
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); run(); }
+    });
+    document.querySelectorAll('.vibe-cap').forEach((cap) => {
+      cap.addEventListener('click', () => {
+        input.value = cap.getAttribute('data-prompt') || '';
+        run();
+      });
+    });
+  },
+
+  /* ================= visualizer controls ================= */
+
+  setVizMode(m) {
+    if (!PG.viz) return;
+    PG.viz.setMode(m);
+    document.querySelectorAll('.viz-btn[data-mode]').forEach((b) => {
+      b.classList.toggle('active', +b.dataset.mode === m);
+    });
+  },
+
+  toggleVizPerf() {
+    if (!PG.viz) return;
+    const on = PG.viz.togglePerf();
+    const btn = $('vizPerf');
+    if (btn) btn.classList.toggle('active', on);
+  },
+
+  buildVisualizer() {
+    if (!PG.viz) return;
+    const viz = PG.viz;
+    document.querySelectorAll('.viz-btn[data-mode]').forEach((b) => {
+      b.addEventListener('click', () => this.setVizMode(+b.dataset.mode));
+    });
+    const perf = $('vizPerf');
+    if (perf) perf.addEventListener('click', () => this.toggleVizPerf());
+    const canvas = $('viz');
+    if (canvas) canvas.addEventListener('click', () => this.setVizMode(viz.mode + 1));
   },
 
   buildTracks() {
@@ -1511,6 +1591,8 @@ const UI = {
         this.rotatePattern(1);
       } else if (e.code === 'KeyM') {
         this.toggleClick();
+      } else if (e.code === 'KeyV') {
+        this.toggleVizPerf();
       } else if (e.key === '?') {
         this.toggleHelp();
       } else if (e.key === 'Escape') {

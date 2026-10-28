@@ -3,6 +3,36 @@
 All releases are zero-dependency, zero-build static sites. CI runs the unit
 suite on Node 18/20/22; GitHub Pages deploys only after CI is green.
 
+## v1.8.0 — 2026-10-28 (Next Byte Hacks V5 hackathon build)
+
+Feature release focused on hackathon-ready "wow" factor and a flagship
+generative feature, while preserving the zero-dependency / zero-build / fully
+offline contract and keeping the entire unit suite green.
+
+### Features
+- ✨ **Vibe Prompt-to-Beat generator** — type a free-text scene
+  ("cyberpunk boss fight", "rainy lofi study in tokyo", "90s underground acid
+  warehouse") and a heuristic engine deterministically maps it to a genre, BPM,
+  swing, density, master-filter cut-off, reverb, sidechain pump and drum tuning,
+  then renders a full pattern. Zero network, zero API, fully offline — same
+  prompt (+ optional seed) always yields the same song. Bilingual EN/中文 UI, 4
+  one-click preset capsules, and a live status read-out of the parsed BPM /
+  style / mood.
+- 🎛️ **Performance visualizer mode** — the canvas now has three switchable
+  visuals (spectrum+waveform, beat-reactive **cyber grid** that breathes with
+  the kick, and a scope / Lissajous), plus a full-screen **performance mode** (`V`
+  key or the ⤢ button) that overlays the live step indicator, BPM and active
+  pattern (A–D) for demo-screen recordings.
+
+### Optimizations
+- Vibe generator writes its inferred FX (filter / reverb / pump / humanize) and
+  drum tuning straight onto the live engine and the on-screen sliders.
+
+### Tests
+- Added a dedicated Vibe test block (determinism, seed reproducibility, valid
+  song invariants, genre/mood heuristics, explicit BPM parsing, bilingual
+  prompts, graceful fallback on empty input).
+
 ## v1.7.0 — 2026-10-28
 
 Builds on v1.6.0 with the features that have landed since, plus a PWA offline

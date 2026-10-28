@@ -20,6 +20,14 @@ const STRINGS = {
     genHint: '— one click, a fresh groove (A = main · B = variation)',
     density: 'Density', generate: '🎲 Generate', mutate: '🧬 Mutate', euc: '◎ Euc',
 
+    // vibe generator
+    vibeTitle: 'Vibe Generator',
+    vibePlaceholder: 'Describe a vibe… e.g. cyberpunk boss fight, rainy lofi tokyo',
+    vibeGen: '✨ Generate',
+    vibeCapCyber: 'Cyberpunk Chase', vibeCapLofi: 'Midnight Lo-Fi', vibeCapAcid: 'Acid Rave', vibeCapDnb: 'Neon DnB',
+    vibeMoodBalanced: 'balanced', vibeMoodDark: 'dark', vibeMoodBright: 'bright',
+    vibeMoodChill: 'chill', vibeMoodEnergetic: 'energetic', vibeMoodMinimal: 'minimal',
+
     songTitle: 'Arrangement',
     songHint: '— song mode chains patterns bar by bar · click a slot to cycle A→B→C→D→remove',
     songOn: 'Song: ON', songOff: 'Song: OFF', addBar: '+ Bar', songReset: 'Reset',
@@ -43,9 +51,10 @@ const STRINGS = {
     delay: 'Delay', reverb: 'Reverb', filter: 'Filter', pump: 'Pump', humanize: 'Humanize',
 
     footSpace: 'play / stop', footPat: 'switch pattern', footPads: 'drum pads',
-    footUndo: 'undo / redo', footClick: 'metronome',
+    footUndo: 'undo / redo', footClick: 'metronome', footViz: 'visualizer / performance mode',
 
     // dynamic
+    tVibe: '✨ {bpm} BPM · {style} · {mood} vibe',
     tNewGroove: 'New {style} groove — A main / B variation',
     tMutated: 'Pattern {p} mutated',
     tEuc: 'Euclid E({k},16) r{r} → {track}',
@@ -98,6 +107,13 @@ const STRINGS = {
     genHint: '— 一键生成全新 groove(A = 主节奏 · B = 变奏)',
     density: '密度', generate: '🎲 生成', mutate: '🧬 变异', euc: '◎ 欧氏',
 
+    vibeTitle: '氛围生成器',
+    vibePlaceholder: '描述一种氛围…如「赛博朋克 Boss 战」「东京雨夜洛菲」',
+    vibeGen: '✨ 生成',
+    vibeCapCyber: '赛博追逐', vibeCapLofi: '午夜洛菲', vibeCapAcid: '酸性锐舞', vibeCapDnb: '霓虹鼓打贝斯',
+    vibeMoodBalanced: '均衡', vibeMoodDark: '暗色', vibeMoodBright: '明亮',
+    vibeMoodChill: '慵懒', vibeMoodEnergetic: '高能', vibeMoodMinimal: '极简',
+
     songTitle: '编排',
     songHint: '— Song 模式逐小节串联 Pattern · 点击槽位循环 A→B→C→D→移除',
     songOn: 'Song: 开', songOff: 'Song: 关', addBar: '+ 小节', songReset: '重置',
@@ -121,9 +137,10 @@ const STRINGS = {
     delay: '延迟', reverb: '混响', filter: '滤波', pump: '泵动', humanize: '人性化',
 
     footSpace: '播放 / 停止', footPat: '切换 Pattern', footPads: '键盘打鼓',
-    footUndo: '撤销 / 重做', footClick: '节拍器',
+    footUndo: '撤销 / 重做', footClick: '节拍器', footViz: '可视化 / 演出模式',
 
     // dynamic
+    tVibe: '✨ {bpm} BPM · {style} · {mood} 氛围',
     tNewGroove: '新 {style} groove — A 主节奏 / B 变奏',
     tMutated: 'Pattern {p} 已变异',
     tEuc: '欧几里得 E({k},16) r{r} → {track}',
@@ -194,6 +211,11 @@ function applyStaticI18n() {
     const key = el.getAttribute('data-i18n');
     const txt = t(key);
     if (txt !== key) el.textContent = txt;
+  });
+  document.querySelectorAll('[data-i18n-ph]').forEach((el) => {
+    const key = el.getAttribute('data-i18n-ph');
+    const txt = t(key);
+    if (txt !== key) el.setAttribute('placeholder', txt);
   });
   document.querySelectorAll('[data-track]').forEach((el) => {
     el.textContent = trackName(el.getAttribute('data-track'));

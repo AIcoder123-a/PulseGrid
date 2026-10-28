@@ -92,6 +92,12 @@
 
   <div class="vizwrap">
     <canvas id="viz"></canvas>
+    <div class="viz-ctrls">
+      <button class="viz-btn active" data-mode="0" title="Spectrum + Wave">◢</button>
+      <button class="viz-btn" data-mode="1" title="Cyber Grid Pulse">▦</button>
+      <button class="viz-btn" data-mode="2" title="Scope / Lissajous">∿</button>
+      <button class="viz-btn" id="vizPerf" title="Performance mode (V)">⤢</button>
+    </div>
   </div>
 
   <main>
@@ -104,6 +110,18 @@
         <button id="btnMutate" class="mini" data-i18n="mutate">🧬 Mutate</button>
         <button id="btnEuc" class="mini" title="Fill a random percussion lane with a rotated euclidean rhythm E(k,16)" data-i18n="euc">◎ Euc</button>
         <button id="btnSongGen" class="mini" title="Arrange a full song in this style: 4 patterns + an 8-bar chain" data-i18n="songGen">🎼 Song</button>
+      </div>
+      <div class="vibe-row">
+        <span class="vibe-spark">✨</span>
+        <input type="text" id="vibePrompt" class="vibe-input" data-i18n-ph="vibePlaceholder" placeholder="Describe a vibe… e.g. cyberpunk boss fight">
+        <button id="btnVibe" class="btn-gen" data-i18n="vibeGen">✨ Generate</button>
+        <div class="vibe-caps" id="vibeCaps">
+          <button class="vibe-cap" data-prompt="cyberpunk boss fight" data-i18n="vibeCapCyber">Cyberpunk Chase</button>
+          <button class="vibe-cap" data-prompt="midnight lo-fi study in tokyo, raining" data-i18n="vibeCapLofi">Midnight Lo-Fi</button>
+          <button class="vibe-cap" data-prompt="90s underground acid warehouse rave" data-i18n="vibeCapAcid">Acid Rave</button>
+          <button class="vibe-cap" data-prompt="fast energetic dnb chase through a neon city" data-i18n="vibeCapDnb">Neon DnB</button>
+        </div>
+        <span id="vibeStatus" class="vibe-status" aria-live="polite"></span>
       </div>
     </section>
 
@@ -204,6 +222,7 @@
         <tr><td><kbd>Q</kbd>–<kbd>I</kbd></td><td data-i18n="footLead">lead keys (Shift = sharp)</td></tr>
         <tr><td><kbd>,</kbd> / <kbd>.</kbd></td><td data-i18n="footRotate">rotate pattern</td></tr>
         <tr><td><kbd>M</kbd></td><td data-i18n="footClick">metronome</td></tr>
+        <tr><td><kbd>V</kbd></td><td data-i18n="footViz">visualizer / performance mode</td></tr>
         <tr><td><kbd>P</kbd></td><td data-i18n="footTap">tap tempo</td></tr>
         <tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Y</kbd></td><td data-i18n="footUndo">undo / redo</td></tr>
         <tr><td><kbd>?</kbd></td><td data-i18n="helpToggle">this help</td></tr>
@@ -220,6 +239,7 @@
   <script src="js/render.js"></script>
   <script src="js/midi.js"></script>
   <script src="js/generator.js"></script>
+  <script src="js/vibe.js"></script>
   <script src="js/i18n.js"></script>
   <script src="js/ui.js"></script>
   <script src="js/app.js"></script>

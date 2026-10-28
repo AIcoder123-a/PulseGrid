@@ -372,6 +372,87 @@ h2 .hint { font-weight: 400; text-transform: none; letter-spacing: 0.2px; opacit
 .btn-gen:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(163, 230, 53, 0.35); }
 .btn-gen:active { transform: translateY(0); }
 
+/* ---------- vibe prompt generator ---------- */
+
+.vibe-row {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 10px 14px;
+  margin-top: 12px; padding-top: 12px;
+  border-top: 1px dashed var(--line);
+}
+.vibe-spark { font-size: 16px; filter: drop-shadow(0 0 6px rgba(129, 140, 248, 0.6)); }
+.vibe-input {
+  flex: 1 1 280px; min-width: 200px;
+  padding: 9px 14px;
+  font-size: 13.5px; color: var(--text);
+  background: #0c1018;
+  border: 1px solid #2a3550; border-radius: 999px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.vibe-input::placeholder { color: #59637a; }
+.vibe-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.18);
+}
+.vibe-caps { display: flex; flex-wrap: wrap; gap: 6px; }
+.vibe-cap {
+  padding: 5px 12px;
+  font-size: 11.5px; font-weight: 600; letter-spacing: 0.3px;
+  color: #c3cce0;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.18), rgba(34, 211, 238, 0.12));
+  border: 1px solid #2a3550; border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+.vibe-cap:hover {
+  color: #fff; border-color: var(--accent);
+  box-shadow: 0 0 12px rgba(34, 211, 238, 0.35);
+  transform: translateY(-1px);
+}
+.vibe-status {
+  flex-basis: 100%;
+  font: 12px var(--mono);
+  color: var(--accent);
+  min-height: 0; max-height: 0; overflow: hidden;
+  opacity: 0; transition: opacity 0.2s ease, max-height 0.2s ease;
+}
+.vibe-status.show { min-height: 16px; max-height: 24px; opacity: 1; }
+
+/* ---------- visualizer controls + performance mode ---------- */
+
+.vizwrap { position: relative; }
+.viz-ctrls {
+  position: absolute; top: 20px; right: 28px;
+  display: flex; gap: 6px;
+  opacity: 0.35; transition: opacity 0.18s ease;
+}
+.vizwrap:hover .viz-ctrls, .viz-ctrls:focus-within { opacity: 1; }
+.viz-btn {
+  width: 30px; height: 30px;
+  font-size: 14px; line-height: 1;
+  color: var(--muted);
+  background: rgba(16, 20, 28, 0.8);
+  border: 1px solid var(--line); border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+.viz-btn:hover { color: var(--text); border-color: #35415a; }
+.viz-btn.active {
+  color: #06121a; background: var(--accent); border-color: var(--accent);
+  box-shadow: 0 0 10px rgba(34, 211, 238, 0.5);
+}
+#vizPerf.active { color: #06121a; background: linear-gradient(135deg, #a3e635, #22d3ee); border-color: transparent; }
+
+body.viz-perf { overflow: hidden; background: #05070b; }
+body.viz-perf #viz {
+  position: fixed; inset: 0;
+  width: 100vw; height: 100vh;
+  z-index: 80; border: none; border-radius: 0;
+  background: #05070b;
+}
+body.viz-perf .viz-ctrls { position: fixed; top: 18px; right: 22px; z-index: 81; opacity: 1; }
+body.viz-perf main, body.viz-perf .topbar, body.viz-perf footer { filter: blur(2px); opacity: 0.25; }
+
 /* ---------- song mode ---------- */
 
 .song-row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; padding: 2px; }
