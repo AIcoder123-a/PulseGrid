@@ -12,6 +12,8 @@
 [![No build step](https://img.shields.io/badge/build-none-a3e635.svg)]()
 [![Pure JavaScript](https://img.shields.io/badge/pure%20JavaScript-ES2020-818cf8.svg)]()
 
+📋 完整变更记录见 [CHANGELOG.md](CHANGELOG.md)。
+
 ## ✨ Features
 
 - **🎲 Beat Generator** — rule-based grooves in ten styles (House, Hip-Hop, Techno, Breaks, Trap, Lo-fi, DnB, Reggaeton, Afrobeat, Surprise) with a density control; each style sets its own swing **and FX character** (sidechain pump, humanize); 🧬 **Mutate** evolves the active pattern, **◎ Euc** drops a rotated euclidean rhythm E(k,16) on a random percussion lane
