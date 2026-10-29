@@ -24,6 +24,12 @@ window.PG = {};
         const raw = localStorage.getItem('pulsegrid-state');
         if (raw) state = UI.normalizeState(JSON.parse(raw));
       } catch (e) { /* corrupted save — fall back to defaults */ }
+      // Repair autosaves written by the v1.8.2 dark-vibe bug: a mood prompt
+      // could persist a 78-265Hz low-pass, which muted the whole mix on every
+      // later visit. Anything under 400Hz is inaudible for this material, so
+      // lift it back to a workable 600Hz. User-dragged values are unaffected
+      // once they exceed the threshold, and share links stay byte-faithful.
+      if (state && state.fx && state.fx.filter < 400) state.fx.filter = 600;
     }
     if (!state) {
       state = demoState();

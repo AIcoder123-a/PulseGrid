@@ -3,6 +3,25 @@
 All releases are zero-dependency, zero-build static sites. CI runs the unit
 suite on Node 18/20/22; GitHub Pages deploys only after CI is green.
 
+## v1.8.4 — 2026-10-29
+
+Patch release: repairs already-saved state, not just new prompts.
+
+### Fixes
+- **The app could boot up nearly silent.** v1.8.3 fixed the Vibe generator,
+  but `localStorage` autosave had already persisted the broken `filter: 78`
+  from an earlier dark-prompt session, so every later visit restored a
+  78 Hz low-pass and the default groove appeared to have no sound. Restored
+  saves with `fx.filter < 400` are now lifted to 600 Hz on boot. Values the
+  user drags themselves are untouched, and share links stay byte-faithful.
+
+### Tests
+- No behaviour change for any preset (all ship 14 000–18 000 Hz). Suite
+  still **42 passed**.
+
+### Chores
+- Service worker cache bumped to `pulsegrid-v32`.
+
 ## v1.8.3 — 2026-10-29
 
 Patch release: fixes the Vibe generator muting the mix on dark prompts.

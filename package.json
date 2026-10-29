@@ -1,6 +1,6 @@
 {
   "name": "pulsegrid",
-  "version": "1.8.3",
+  "version": "1.8.4",
   "description": "Zero-dependency browser drum machine & bass-line sequencer — pure Web Audio synthesis, no samples, no build step.",
   "private": true,
   "license": "MIT",
