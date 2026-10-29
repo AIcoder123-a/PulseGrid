@@ -3,6 +3,22 @@
 All releases are zero-dependency, zero-build static sites. CI runs the unit
 suite on Node 18/20/22; GitHub Pages deploys only after CI is green.
 
+## v1.8.2 — 2026-10-29
+
+Patch release: bug fixes in the Sound Design panel.
+
+### Fixes
+- **Bass & Lead could not be auditioned** — the "Hear / 试听" button, the chip
+  click and the tune/decay sliders were silent for the bass and lead voices
+  because the preview path only routed drum triggers. Preview now plays a
+  representative note (E2 bass / E4 lead).
+- **Bass & Lead chips had no colour dot** — their chips were built without a
+  colour, so the `--c` accent variable was undefined; they now use the same
+  magenta / amber as their lanes.
+
+### Chores
+- Service worker cache bumped to `pulsegrid-v30`.
+
 ## v1.8.1 — 2026-10-29
 
 Patch release: UI polish only, no functional changes.

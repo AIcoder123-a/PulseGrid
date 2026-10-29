@@ -1217,7 +1217,7 @@ const UI = {
   buildSoundPanel() {
     this.soundSel = 'kick';
     const host = $('soundChips');
-    for (const cfg of [...TRACKS, { id: 'bass' }, { id: 'lead' }]) {
+    for (const cfg of [...TRACKS, { id: 'bass', color: '#e879f9' }, { id: 'lead', color: '#fbbf24' }]) {
       const chip = document.createElement('button');
       chip.className = 'sound-chip';
       chip.dataset.id = cfg.id;

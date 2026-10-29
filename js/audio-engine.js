@@ -117,7 +117,11 @@ class AudioEngine {
   preview(id) {
     this.ensure();
     if (this.ctx.state === 'suspended') this.ctx.resume();
-    this.trigger(id, this.ctx.currentTime + 0.02);
+    const t = this.ctx.currentTime + 0.02;
+    // synth voices aren't drum triggers — audition a representative note instead
+    if (id === 'bass') { this.bassNote(t, 40, false, 0.22); return; }   // E2
+    if (id === 'lead') { this.leadNote(t, [64], false, 0.24); return; } // E4
+    this.trigger(id, t);
   }
 
   /** One-shot audition of a bass note while editing the roll. */
