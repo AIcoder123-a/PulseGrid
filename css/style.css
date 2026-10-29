@@ -619,6 +619,9 @@ kbd {
 
 @media (max-width: 720px) {
   .topbar { gap: 8px 12px; padding: 8px 10px; }
+  /* the utility cluster (lang / undo / copy / clear / reset / export) is a
+     single nowrap flex row ~790px wide; let it wrap instead of widening <body> */
+  .ctrl.actions { flex-wrap: wrap; }
   .brand-tag { display: none; }
   .btn-play { min-width: 84px; padding: 8px 12px; }
   .ctrl input[type="range"] { width: 84px; }
@@ -632,6 +635,9 @@ kbd {
   .lane-ctl { flex-basis: auto; grid-template-columns: repeat(2, 30px) 10px 1fr 76px; }
   .lane-vol { width: 100% !important; }
   .lane-grid { min-width: 0; grid-template-columns: repeat(16, minmax(18px, 1fr)); gap: 3px; }
+  /* .roll-row .lane-grid sets 560px later in the file; without this the piano
+     roll widens <body> and every panel overflows on a phone. */
+  .roll-row .lane-grid { min-width: 0; }
   .step { height: 30px; border-radius: 5px; }
 
   .roll-row { gap: 4px; }
