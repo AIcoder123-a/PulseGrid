@@ -3,6 +3,35 @@
 All releases are zero-dependency, zero-build static sites. CI runs the unit
 suite on Node 18/20/22; GitHub Pages deploys only after CI is green.
 
+## v1.9.1 — 2026-10-29
+
+Patch release: the phone layout actually fits, and the README stops
+under-reporting what the app can do.
+
+### Fixed
+- **Horizontal overflow on phones.** The toolbar's utility cluster (language /
+  undo / copy / clear / reset / export) is a single non-wrapping flex row about
+  790 px wide, and the piano roll carried a `min-width: 560px` that the mobile
+  breakpoint never overrode. Together they stretched `<body>` to **847 px** on a
+  390 px viewport, so WAV / MIDI / Share / Export sat off-screen and the whole
+  page had to be dragged sideways. Both are now released under 720 px:
+  `scrollWidth` drops to exactly 390 px. Desktop rendering is unchanged — the
+  toolbar still lays out as the same two compact rows.
+
+### Documentation
+- **Tap tempo** documented (`TAP` button / `P`): six-tap average, a pause over
+  two seconds restarts the count, clamped to 60–200 BPM.
+- **Right-click a lane name** to wipe that lane — undoable — is now listed.
+- **`js/vibe.js`** added to the project tree; the prompt-to-beat engine's only
+  implementation file was missing from it.
+- **Song mode** now mentions per-bar looping (×2–×4), not just the 16-bar limit.
+- **Style count corrected**: the Chinese summary said eight styles, the
+  generator ships ten (Reggaeton and Afrobeat were never added to the prose).
+- The Chinese summary gained **Vibe**, **TAP** and **Reset**, and its punctuation
+  was normalised to full-width.
+- Keyboard line now includes `P` (tap tempo) and `,` / `.` (rotate); step 1 of
+  *How to play* mentions the Vibe prompt as an alternative to **Generate**.
+
 ## v1.9.0 — 2026-10-29
 
 Minor release: a one-click way back to a known-good state.
