@@ -60,6 +60,16 @@ No server? No problem — open `index.html` directly from your file manager. It 
 
 **Put it online:** push to GitHub, then in *Settings → Pages* set Source to **GitHub Actions** — the included workflow deploys on every push to `main` **after CI passes** (a red build never replaces the live site).
 
+## 📴 Offline usage
+
+Everything is static — **no build, no server required**. Three ways to run it offline:
+
+1. **Install the PWA** (easiest) — open the site, click the **install icon** in the address bar (Chrome/Edge) or **Add to Home Screen** on mobile. Once installed, the service worker caches every file and it runs with no network.
+2. **Open the file directly** — download the repo (`Code → Download ZIP`, or `git clone`) and **double-click `index.html`**. It runs entirely from local files; the service worker is skipped on `file://`, so it won't "install" as an app, but every feature works.
+3. **Run a local static server** — `python -m http.server 8000` (or `npx serve`), then open `http://localhost:8000`. A localhost origin enables the service worker, so you get the full installable/offline PWA.
+
+> **中文：** 无需编译。① 打开站点点地址栏"安装"（手机"添加到主屏幕"）即离线可用；② 下载后双击 `index.html` 直接跑（本地文件本就离线，`file://` 下不注册 SW、不能装 App，但功能齐全）；③ 本地执行 `python -m http.server 8000` 后访问 `localhost:8000`，可装成完整 PWA。
+
 ## 🎛 How to play
 
 1. Hit **🎲 Generate** — instant groove in A, variation in B (or pick a preset)
