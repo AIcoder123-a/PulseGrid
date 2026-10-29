@@ -3,6 +3,19 @@
 All releases are zero-dependency, zero-build static sites. CI runs the unit
 suite on Node 18/20/22; GitHub Pages deploys only after CI is green.
 
+## v1.8.1 — 2026-10-29
+
+Patch release: UI polish only, no functional changes.
+
+### Fixes
+- **Toolbar no longer jumps when switching EN ↔ 中文** — the language toggle,
+  Copy and Clear buttons now keep a stable width, and mini buttons never wrap,
+  so text-length differences between languages no longer nudge the layout.
+
+### Chores
+- Service worker cache bumped to `pulsegrid-v29` so installed / PWA users pick
+  up the updated stylesheet.
+
 ## v1.8.0 — 2026-10-28 (Next Byte Hacks V5 hackathon build)
 
 Feature release focused on hackathon-ready "wow" factor and a flagship

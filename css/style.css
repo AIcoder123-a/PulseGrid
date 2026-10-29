@@ -45,6 +45,12 @@ html, body {
   backdrop-filter: blur(8px);
 }
 
+/* i18n layout stability — stop EN<->ZH text-length changes from nudging the toolbar */
+button.mini, .btn-play { white-space: nowrap; }
+#btnLang { min-width: 64px; text-align: center; }
+#btnCopy { min-width: 58px; text-align: center; }
+#btnClear { min-width: 58px; text-align: center; }
+
 .brand { display: flex; align-items: center; gap: 10px; margin-right: 6px; }
 .brand-name { font-size: 18px; font-weight: 700; letter-spacing: 0.4px; }
 .brand-tag {
