@@ -15,3 +15,4 @@ tmp/
 # local internal docs (NEVER commit — private checklists/guides, not project files)
 RELEASE_NOTES*.md
 HACKATHON_SUBMISSION_GUIDE_ZH.md
+DEVPOST_SUBMISSION.md
