@@ -50,6 +50,7 @@ button.mini, .btn-play { white-space: nowrap; }
 #btnLang { min-width: 64px; text-align: center; }
 #btnCopy { min-width: 58px; text-align: center; }
 #btnClear { min-width: 58px; text-align: center; }
+#btnReset { min-width: 70px; text-align: center; }
 
 .brand { display: flex; align-items: center; gap: 10px; margin-right: 6px; }
 .brand-name { font-size: 18px; font-weight: 700; letter-spacing: 0.4px; }

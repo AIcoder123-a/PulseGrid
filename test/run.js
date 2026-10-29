@@ -776,6 +776,20 @@ const run = async () => {
     ok(['house', 'techno', 'lofi', 'dnb', 'afro', 'surprise'].includes(r.cfg.style), 'falls back to a known style');
   });
 
+  await test('reset: demoState is a complete, audible starting point', () => {
+    // resetAll() wipes PG.state then Object.assign()s demoState() into it, so
+    // any key missing here would silently drop a setting on reset.
+    const d = T.demoState();
+    const required = ['version', 'steps', 'click', 'bpm', 'swing', 'masterVol',
+                      'fx', 'active', 'patterns', 'trackState', 'song'];
+    eq(required.filter((k) => !(k in d)), [], 'demoState supplies every persisted key');
+    eq(d.patterns.length, 4, 'four pattern slots restored');
+    ok(d.song && d.song.enabled === true, 'song mode is on in the demo state');
+    ok(d.fx.filter >= 400, 'restored filter is audible');
+    const voices = T.TRACKS.map((x) => x.id).concat(['bass', 'lead']);
+    eq(voices.filter((v) => !d.trackState[v]), [], 'trackState covers every voice');
+  });
+
   /* ---------- summary ---------- */
 
   console.log(`\n${passed} passed, ${failed} failed, ${passed + failed} total\n`);

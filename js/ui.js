@@ -853,6 +853,28 @@ const UI = {
     this.toast(t('tPreset', { name: p.name }));
   },
 
+  /* Restore the first-visit project (demo arrangement, song mode on, default
+   * FX and track settings). Mutates PG.state in place so every holder of the
+   * reference — sequencer, visualizer, engine — stays wired to the same object.
+   * Undoable: the previous state is pushed onto the undo stack first. */
+  resetAll() {
+    this.pushUndo();
+    if (PG.seq.isPlaying) $('btnStop').click();
+
+    const fresh = demoState();
+    for (const k of Object.keys(PG.state)) delete PG.state[k];
+    Object.assign(PG.state, fresh);
+
+    // drop any #p=... share hash, otherwise a reload would restore the old song
+    try {
+      if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+    } catch (e) { /* file:// or blocked history API — harmless */ }
+
+    this._restoreUi();          // rebuilds the grid if the step count changed
+    PG.markDirty();
+    this.toast(t('tReset'));
+  },
+
   /* ================= transport ================= */
 
   bindTransport() {
@@ -944,6 +966,27 @@ const UI = {
       this.refreshGrid();
       PG.markDirty();
       this.toast(t('tCleared'));
+    });
+
+    // Two-step reset: first click arms, second click within 2s restores defaults.
+    $('btnReset').addEventListener('click', () => {
+      const btn = $('btnReset');
+      if (!this._resetArmed) {
+        this._resetArmed = true;
+        btn.textContent = t('tSure');
+        btn.classList.add('armed');
+        this._resetTimer = setTimeout(() => {
+          this._resetArmed = false;
+          btn.textContent = t('resetAll');
+          btn.classList.remove('armed');
+        }, 2000);
+        return;
+      }
+      clearTimeout(this._resetTimer);
+      this._resetArmed = false;
+      btn.textContent = t('resetAll');
+      btn.classList.remove('armed');
+      this.resetAll();
     });
   },
 
@@ -1644,6 +1687,7 @@ const UI = {
       setLang(LANG === 'en' ? 'zh' : 'en');
       this.refreshSong();                     // dynamic Song ON/OFF label
       if (!this._clearArmed) $('btnClear').textContent = t('clear');
+      if (!this._resetArmed) $('btnReset').textContent = t('resetAll');
     });
   },
 

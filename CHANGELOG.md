@@ -3,6 +3,37 @@
 All releases are zero-dependency, zero-build static sites. CI runs the unit
 suite on Node 18/20/22; GitHub Pages deploys only after CI is green.
 
+## v1.9.0 — 2026-10-29
+
+Minor release: a one-click way back to a known-good state.
+
+### Added
+- **`↺ Reset` button in the toolbar** — restores the first-visit demo project:
+  BPM 122, the four-pattern demo arrangement, song mode on, default master FX
+  and default per-track tune/decay. It is a genuine full reset, not a `Clear`:
+  `Clear` only empties the active pattern, while `Reset` rebuilds everything,
+  including the mixer lanes, the arrangement chain and the step count.
+- **Two-step arming**, matching the existing `Clear` behaviour: click once and
+  the label turns into `Sure?` for 2 seconds; click again to commit. A stray
+  click cannot wipe a session.
+- **Undoable** — the previous state is pushed onto the undo stack, so `Ctrl+Z`
+  brings the old project back.
+
+### Notes
+- Reset also drops any `#p=...` share hash, otherwise a reload would silently
+  restore the pre-reset song from the URL.
+- If the project was 32 steps and the demo is 16, the grid is rebuilt rather
+  than refreshed in place, so the cell count stays consistent.
+
+### Tests
+- New test `reset: demoState is a complete, audible starting point` asserts
+  every persisted key exists, all four pattern slots are restored, song mode is
+  on, the filter is audible (≥400 Hz) and `trackState` covers every voice.
+  Suite now **43 passed**.
+
+### Chores
+- Service worker cache bumped to `pulsegrid-v33`.
+
 ## v1.8.4 — 2026-10-29
 
 Patch release: repairs already-saved state, not just new prompts.

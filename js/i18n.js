@@ -13,7 +13,7 @@ const STRINGS = {
     tagline: 'web audio drum machine',
     play: 'Play', stop: 'Stop',
     swing: 'Swing', master: 'Master', preset: 'Preset', load: '— load —',
-    copy: 'Copy→', clear: 'Clear', share: 'Share', export: 'Export', import: 'Import',
+    copy: 'Copy→', clear: 'Clear', resetAll: 'Reset', share: 'Share', export: 'Export', import: 'Import',
     langBtn: '中文',
 
     genTitle: 'Beat Generator',
@@ -59,6 +59,7 @@ const STRINGS = {
     tMutated: 'Pattern {p} mutated',
     tEuc: 'Euclid E({k},16) r{r} → {track}',
     tCleared: 'Pattern cleared',
+    tReset: 'Defaults restored — Ctrl+Z to undo',
     tCopied: 'Copied to pattern {p}',
     tPreset: 'Loaded preset: {name} — hit Play ▶',
     tShared: 'Loaded shared pattern — hit Play ▶',
@@ -100,7 +101,7 @@ const STRINGS = {
     tagline: '纯 Web Audio 鼓机',
     play: '播放', stop: '停止',
     swing: '摇摆', master: '主音量', preset: '预设', load: '— 载入 —',
-    copy: '复制→', clear: '清空', share: '分享', export: '导出', import: '导入',
+    copy: '复制→', clear: '清空', resetAll: '重置', share: '分享', export: '导出', import: '导入',
     langBtn: 'EN',
 
     genTitle: '节拍生成器',
@@ -145,6 +146,7 @@ const STRINGS = {
     tMutated: 'Pattern {p} 已变异',
     tEuc: '欧几里得 E({k},16) r{r} → {track}',
     tCleared: 'Pattern 已清空',
+    tReset: '已恢复默认设置 — Ctrl+Z 可撤销',
     tCopied: '已复制到 Pattern {p}',
     tPreset: '已载入预设:{name} — 按 ▶ 播放',
     tShared: '已载入分享的节奏 — 按 ▶ 播放',
