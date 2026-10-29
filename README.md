@@ -33,7 +33,7 @@
 - **MIDI export & import** — export a standard `.mid` (drums on GM channel 10, bass on channel 1, lead on channel 2) for any DAW, or drop a `.mid` onto **Import**: it's quantized to the grid, GM drum notes map back to lanes, pitched channels land on bass/lead (lowest-pitch fallback for DAW files), tempo is read and a second bar promotes the pattern to 32 steps
 - **WAV export** — renders your patterns (or the whole song chain) through an `OfflineAudioContext` using the exact same synthesis code, faster than real time
 - **Share links** — one click encodes the whole project state into the URL (base64url in the hash); open the link and the beat is there
-- **Autosave** to localStorage (flushed on tab hide/close), **export/import** patterns as JSON, destructive Clear guarded by a two-step confirm
+- **Autosave** to localStorage (flushed on tab hide/close), **export/import** patterns as JSON, destructive Clear guarded by a two-step confirm, and a **↺ Reset** that rebuilds the first-visit demo project (tempo, arrangement, FX, per-voice tuning) without clearing the cache or reloading — undoable with `Ctrl+Z`
 - **Bilingual UI** — English / 简体中文, one-click 🌐 toggle; the language follows your browser on first visit and is remembered
 - **Pattern rotate** — `⟲` / `⟳` (or `,` / `.`) shift the whole groove one step; instant variations, wrap-around included
 - **Undo / Redo** — full project history (`Ctrl+Z` / `Ctrl+Y`); bursts of fine edits coalesce into one step
