@@ -142,7 +142,10 @@ function vibeParse(prompt, opts) {
   let reverb = 0.12 + rng() * 0.08;
   let mood = 'balanced';
   if (VIBE_DARK.test(text) && !VIBE_BRIGHT.test(text)) {
-    filterFrac = 0.2 + rng() * 0.18; reverb = 0.42 + rng() * 0.2; mood = 'dark';
+    // A dark mood means "muffled", not "silent". 0.55-0.68 sits at roughly
+    // 840Hz-2kHz on the slider curve: clearly darker than neutral (which is
+    // ~10-14kHz), but every fundamental and the snare body still pass through.
+    filterFrac = 0.55 + rng() * 0.13; reverb = 0.42 + rng() * 0.2; mood = 'dark';
   } else if (VIBE_BRIGHT.test(text)) {
     filterFrac = 0.97; reverb = 0.06 + rng() * 0.08; mood = 'bright';
   } else if (VIBE_SPARSE.test(text)) {
@@ -152,7 +155,9 @@ function vibeParse(prompt, opts) {
   } else if (VIBE_SLOW.test(text)) {
     mood = 'chill';
   }
-  const filterHz = Math.round(20 * Math.pow(900, filterFrac)); // sliderToHz: 20*(18000/20)^(v/100)
+  // sliderToHz: 20*(18000/20)^(v/100). Floor at 600Hz so no prompt combination
+  // can ever collapse the master low-pass into near-silence.
+  const filterHz = Math.max(600, Math.round(20 * Math.pow(900, filterFrac)));
 
   // --- pump (sidechain) & humanize ---
   let pump = 0.25 + rng() * 0.2;

@@ -3,6 +3,28 @@
 All releases are zero-dependency, zero-build static sites. CI runs the unit
 suite on Node 18/20/22; GitHub Pages deploys only after CI is green.
 
+## v1.8.3 — 2026-10-29
+
+Patch release: fixes the Vibe generator muting the mix on dark prompts.
+
+### Fixes
+- **Dark / lo-fi prompts collapsed the master low-pass into near-silence.**
+  The dark branch mapped its brightness to `0.20–0.38` on the slider curve,
+  which is a **78–265 Hz** cut-off — high enough to mute almost the entire
+  mix. A "midnight lo-fi / raining" capsule landed on 78 Hz, so the second
+  preset sounded broken. The dark range is now `0.55–0.68` (≈840 Hz–2 kHz):
+  audibly muffled, but every fundamental and the snare body still pass.
+- **Added a hard floor** of 600 Hz to `filterHz`, so no future lexicon change
+  can collapse the master filter into silence again.
+
+### Tests
+- New regression test `vibe: no prompt can collapse the master filter to
+  silence` asserts every preset capsule stays above 600 Hz and that dark
+  prompts stay below 4 kHz (muffled, not neutral). Suite now **42 passed**.
+
+### Chores
+- Service worker cache bumped to `pulsegrid-v31`.
+
 ## v1.8.2 — 2026-10-29
 
 Patch release: bug fixes in the Sound Design panel.

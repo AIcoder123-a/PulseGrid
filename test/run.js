@@ -745,6 +745,27 @@ const run = async () => {
     ok(zh.style === 'techno', 'Chinese cyberpunk -> techno');
   });
 
+  await test('vibe: no prompt can collapse the master filter to silence', () => {
+    // Regression: a dark mood once mapped to 0.20-0.38 on the slider curve,
+    // i.e. a 78-265Hz low-pass, which muted the entire mix. Every prompt must
+    // stay audible, and dark prompts must still read as muffled (not neutral).
+    const capsules = [
+      'cyberpunk boss fight at midnight',
+      'midnight lo-fi study in tokyo, raining',
+      '90s underground acid warehouse rave',
+      'fast energetic dnb chase through a neon city',
+    ];
+    const darkish = ['dark underwater dungeon', 'rainy midnight', 'evil shadow noir', '黑暗 雨夜'];
+    for (const p of capsules.concat(darkish)) {
+      const c = T.Vibe.parse(p);
+      ok(c.filterHz >= 600, `"${p}": cutoff ${c.filterHz}Hz stays audible`);
+    }
+    for (const p of darkish) {
+      const c = T.Vibe.parse(p);
+      ok(c.filterHz <= 4000, `"${p}": dark prompt stays muffled (${c.filterHz}Hz)`);
+    }
+  });
+
   await test('vibe: explicit BPM in the prompt is honored', () => {
     eq(T.Vibe.generate('techno at 140 bpm', { seed: 3 }).bpm, 140, 'parsed bpm wins');
   });
